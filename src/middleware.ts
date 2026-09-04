@@ -5,13 +5,16 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/session-token";
  * Gate every app route behind a valid session, and keep authenticated users out
  * of the login screen.
  *
+ * Next 16 renames this convention to `proxy.ts`; pinned to 15 for AWS Amplify,
+ * which supports Next.js 12–15.
+ *
  * This is a redirect convenience, not the security boundary — each route
  * handler independently calls `requireSession()` before touching clinic data.
  */
 
 const PUBLIC_PATHS = ["/login"];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySessionToken(token) : null;

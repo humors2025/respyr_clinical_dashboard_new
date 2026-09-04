@@ -8,7 +8,10 @@ Deployed via **AWS Amplify** — pushing to `main` publishes.
 
 ## Stack
 
-- Next.js 16 (App Router) · React 19 · TypeScript
+- Next.js 15 (App Router) · React 19 · TypeScript
+  - Pinned to 15 deliberately: AWS Amplify Hosting compute supports Next.js 12–15.
+    Raising it means `src/middleware.ts` becomes `src/proxy.ts` and the ESLint
+    flat-config bridge in `eslint.config.mjs` can be dropped.
 - Tailwind CSS v4, themed with the Respyr design tokens
 - Existing PHP APIs on `humorstech.com` remain the data backend — nothing here has its own database
 
@@ -50,7 +53,7 @@ src/
     dashboard.ts           aggregation — one settled call per upstream
     scores.ts              score model, bands, date helpers
     session.ts             cookie session (jose, HS256)
-  proxy.ts                 route gating (page routes only, never /api)
+  middleware.ts            route gating (page routes only, never /api)
 ```
 
 Upstream calls are settled independently: one dead endpoint degrades a single card and
