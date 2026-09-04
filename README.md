@@ -47,8 +47,10 @@ src/
     login/                 sign-in screen
     (app)/dashboard/       clinic overview (server-rendered, client-refreshed)
     (app)/history/         subject roster with latest scores
+    (app)/subjects/        subject profiles, editable measurements
     api/auth/login|logout  session cookie lifecycle
     api/dashboard          per-day dashboard payload
+    api/subjects/[id]      PATCH subject measurements (validated server-side)
   lib/
     respyr-api.ts          server-only client for the PHP endpoints
     dashboard.ts           aggregation — one settled call per upstream
@@ -125,7 +127,7 @@ npm run lint && npm run typecheck && npm run build
 - [x] Sign-in and session handling
 - [x] Clinic overview dashboard
 - [x] Test history
-- [ ] Subjects (create / edit / delete)
+- [x] Subjects (list and edit measurements)
 - [ ] Patient trends (`view-profile`)
 - [ ] PDF health report
 - [ ] Admin profile, password change, forgot-password

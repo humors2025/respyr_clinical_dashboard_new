@@ -181,6 +181,52 @@ export async function fetchAllowance(loginId: string): Promise<Allowance | null>
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* Subjects                                                            */
+/* ------------------------------------------------------------------ */
+
+/** Every subject profile registered to the clinic. */
+export async function fetchSubjects(loginId: string): Promise<AnalyticsRow[]> {
+  const endpoint = `${CLINIC_BASE}/fetch_clinical_profiles2.php?clinic_name=${encodeURIComponent(loginId)}`;
+  const res = await request(endpoint, { method: "GET" });
+  const data = await parseJson<{ status?: string; data?: unknown }>(res, endpoint);
+  if (data?.status !== "success" || !Array.isArray(data.data)) return [];
+  return data.data as AnalyticsRow[];
+}
+
+export interface SubjectUpdate {
+  age: number;
+  height: number;
+  weight: number;
+}
+
+/**
+ * Updates a subject's measurements.
+ *
+ * Name and gender are intentionally not updatable — the legacy portal disabled
+ * those inputs, and the upstream endpoint accepts no such parameters.
+ */
+export async function updateSubject(
+  loginId: string,
+  profileId: string,
+  patch: SubjectUpdate,
+): Promise<{ ok: boolean; message: string }> {
+  const params = new URLSearchParams({
+    login_id: loginId,
+    profile_id: profileId,
+    age: String(patch.age),
+    height: String(patch.height),
+    weight: String(patch.weight),
+  });
+  const endpoint = `${CLINIC_BASE}/update_clinical_profile.php?${params}`;
+  const res = await request(endpoint, { method: "GET" });
+  const data = await parseJson<{ status?: string; message?: string }>(res, endpoint);
+  return {
+    ok: data?.status === "success",
+    message: String(data?.message ?? (data?.status === "success" ? "Profile updated." : "Update failed.")),
+  };
+}
+
 /** Clinic logo, returned by the PHP as base64 in a JSON envelope. */
 export async function fetchClinicLogo(loginId: string): Promise<string | null> {
   const endpoint = `${CLINIC_BASE}/fetch_logo1.php?clinic_name=${encodeURIComponent(loginId)}`;

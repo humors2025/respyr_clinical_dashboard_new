@@ -42,6 +42,16 @@ createServer((req,res) => {
       Db_Score:score(i,1), liver_score:score(i,2), Blow_Score:score(i,3), Gut_Score_per:score(i,4),
       dttm:`${pad(now.getMonth()+1)}/${pad(Math.max(1, now.getDate()-(i%20)))}/${now.getFullYear()} ${pad(8+(i%9))}:${pad((i*7)%60)}:00`,
     }));
+  } else if (p.includes("fetch_clinical_profiles2")) {
+    body = { status:"success", data: NAMES.map(([name,gender,age],i) => ({
+      subject_id:`subject${140+i}`, profile_name:name, gender, age,
+      height: 150 + Math.round(seeded(i,13)*45),
+      weight: 45 + Math.round(seeded(i,14)*55),
+      clinic_name:"verify-demo",
+      dttm:`2026-0${1+(i%9)}-${pad(1+(i%27))} ${pad(9+(i%8))}:${pad((i*11)%60)}:00`,
+    })) };
+  } else if (p.includes("update_clinical_profile")) {
+    body = { status:"success", message:"Profile updated successfully." };
   } else if (p.includes("onboard-pat")) {
     body = { onboarded: 128 };
   } else if (p.includes("testallow")) {
