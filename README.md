@@ -46,11 +46,13 @@ src/
   app/
     login/                 sign-in screen
     (app)/dashboard/       clinic overview (server-rendered, client-refreshed)
+    (app)/history/         subject roster with latest scores
     api/auth/login|logout  session cookie lifecycle
     api/dashboard          per-day dashboard payload
   lib/
     respyr-api.ts          server-only client for the PHP endpoints
     dashboard.ts           aggregation — one settled call per upstream
+    history.ts             subject roster aggregation
     scores.ts              score model, bands, date helpers
     session.ts             cookie session (jose, HS256)
   middleware.ts            route gating (page routes only, never /api)
@@ -122,7 +124,7 @@ npm run lint && npm run typecheck && npm run build
 
 - [x] Sign-in and session handling
 - [x] Clinic overview dashboard
-- [ ] Test history
+- [x] Test history
 - [ ] Subjects (create / edit / delete)
 - [ ] Patient trends (`view-profile`)
 - [ ] PDF health report

@@ -142,6 +142,17 @@ export async function fetchWeeklyReports(loginId: string): Promise<AnalyticsRow[
   return Array.isArray(data) ? (data as AnalyticsRow[]) : [];
 }
 
+/**
+ * One row per subject: their most recent scores, cumulative test count and
+ * last-tested timestamp. Backs the test-history roster.
+ */
+export async function fetchSubjectRoster(loginId: string): Promise<AnalyticsRow[]> {
+  const endpoint = `${API_BASE}/opd-encry-data_v2.php?login_id=${encodeURIComponent(loginId)}`;
+  const res = await postForm(endpoint, { login_id: loginId });
+  const data = await parseJson<unknown>(res, endpoint);
+  return Array.isArray(data) ? (data as AnalyticsRow[]) : [];
+}
+
 /** Total subjects onboarded by this clinic. */
 export async function fetchOnboardedCount(loginId: string): Promise<number> {
   const endpoint = `${API_BASE}/opd-onboard-pat_v2.php`;

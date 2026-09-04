@@ -14,7 +14,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", ready: true, icon: <GridIcon /> },
-  { href: "/history", label: "Test history", ready: false, icon: <ClockIcon /> },
+  { href: "/history", label: "Test history", ready: true, icon: <ClockIcon /> },
   { href: "/subjects", label: "Subjects", ready: false, icon: <UsersIcon /> },
   { href: "/reports", label: "Reports", ready: false, icon: <FileIcon /> },
   { href: "/settings", label: "Settings", ready: false, icon: <GearIcon /> },

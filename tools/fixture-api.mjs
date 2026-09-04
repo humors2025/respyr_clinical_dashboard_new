@@ -34,6 +34,14 @@ createServer((req,res) => {
       for (let k=0, n=Math.floor(seeded(d,9)*6); k<n; k++)
         body.push({ timestamp: Math.floor(day.getTime()/1000)+k*900 });
     }
+  } else if (p.includes("opd-encry-data_v2")) {
+    // Subject roster: one row per subject, not per test.
+    body = NAMES.map(([name,gender,age],i) => ({
+      profile_id:`subject${140+i}`, name, gender, age,
+      count_taken: 1 + Math.floor(seeded(i,11)*22),
+      Db_Score:score(i,1), liver_score:score(i,2), Blow_Score:score(i,3), Gut_Score_per:score(i,4),
+      dttm:`${pad(now.getMonth()+1)}/${pad(Math.max(1, now.getDate()-(i%20)))}/${now.getFullYear()} ${pad(8+(i%9))}:${pad((i*7)%60)}:00`,
+    }));
   } else if (p.includes("onboard-pat")) {
     body = { onboarded: 128 };
   } else if (p.includes("testallow")) {
