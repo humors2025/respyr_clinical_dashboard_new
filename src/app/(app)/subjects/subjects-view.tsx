@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { Subject } from "@/lib/subjects";
@@ -113,11 +114,18 @@ export function SubjectsView({ subjects, error }: { subjects: Subject[]; error: 
                     className="border-b border-line transition-colors last:border-0 hover:bg-surface"
                   >
                     <td className="px-5 py-3.5">
-                      <p className="type-body font-medium text-ink">{subject.name}</p>
-                      <p className="type-micro font-normal text-ink-3">
-                        {subject.id}
-                        {subject.gender && ` · ${subject.gender === "M" ? "Male" : "Female"}`}
-                      </p>
+                      <Link
+                        href={`/subjects/${encodeURIComponent(subject.id)}?name=${encodeURIComponent(subject.name)}`}
+                        className="group block"
+                      >
+                        <p className="type-body font-medium text-ink transition-colors group-hover:text-blue">
+                          {subject.name}
+                        </p>
+                        <p className="type-micro font-normal text-ink-3">
+                          {subject.id}
+                          {subject.gender && ` · ${subject.gender === "M" ? "Male" : "Female"}`}
+                        </p>
+                      </Link>
                     </td>
                     <td className="type-body px-3 py-3.5 text-center text-ink-2 tabular-nums">
                       {subject.age ?? "—"}
@@ -135,6 +143,17 @@ export function SubjectsView({ subjects, error }: { subjects: Subject[]; error: 
                       {formatCreated(subject.createdAt)}
                     </td>
                     <td className="px-5 py-3.5 text-right">
+                      <Link
+                        href={`/subjects/${encodeURIComponent(subject.id)}?name=${encodeURIComponent(subject.name)}`}
+                        className="btn-ghost mr-1.5 h-8"
+                        aria-label={`View ${subject.name}`}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        View
+                      </Link>
                       <button
                         type="button"
                         onClick={() => setEditing(subject)}

@@ -42,6 +42,21 @@ createServer((req,res) => {
       Db_Score:score(i,1), liver_score:score(i,2), Blow_Score:score(i,3), Gut_Score_per:score(i,4),
       dttm:`${pad(now.getMonth()+1)}/${pad(Math.max(1, now.getDate()-(i%20)))}/${now.getFullYear()} ${pad(8+(i%9))}:${pad((i*7)%60)}:00`,
     }));
+  } else if (p.includes("data-interp")) {
+    body = { name:"Vikram Rao", gender:"male", age:61, height:172, weight:78 };
+  } else if (p.includes("trends-history")) {
+    body = [];
+    for (let k = 0; k < 9; k++) {
+      const d = new Date(now); d.setDate(d.getDate() - k*9);
+      body.push({
+        dttm:`${pad(d.getMonth()+1)}/${pad(d.getDate())}/${d.getFullYear()} ${pad(9+(k%8))}:${pad((k*13)%60)}:00`,
+        Db_Score:score(k,21), liver_score:score(k,22), Blow_Score:score(k,23), Gut_Score_per:score(k,24),
+        acetone_ppm:Math.round(seeded(k,25)*90)/10, h2_ppm:Math.round(seeded(k,26)*40)/10,
+        ethnol_ppm:Math.round(seeded(k,27)*60)/10, FEV1_L:Math.round((1.8+seeded(k,28)*1.9)*100)/100,
+        maxpress:993.19, blow_raw_values:"908.18,935.55,947.27,966.57,984.28,989.96,988.77,974.14,955.92,930.55",
+        respiratory_fvc_json:JSON.stringify({"Respyr_Measured":{"FEV1(L)":2.48,"FVC(L)":3.32}}),
+      });
+    }
   } else if (p.includes("fetch_clinical_profiles2")) {
     body = { status:"success", data: NAMES.map(([name,gender,age],i) => ({
       subject_id:`subject${140+i}`, profile_name:name, gender, age,

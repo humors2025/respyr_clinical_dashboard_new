@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 import { scoreBand, type Patient } from "@/lib/scores";
 import { EmptyState, Panel, PanelHeader, ScorePill } from "@/components/ui";
@@ -64,15 +65,20 @@ export function PatientList({ patients, search }: { patients: Patient[]; search:
               key={`${patient.id}-${patient.takenAt ?? ""}`}
               className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5 transition-colors hover:bg-surface"
             >
-              <div className="min-w-[150px] flex-1">
-                <p className="type-body font-medium text-ink">{patient.name}</p>
+              <Link
+                href={`/subjects/${encodeURIComponent(patient.id)}?name=${encodeURIComponent(patient.name)}`}
+                className="group min-w-[150px] flex-1"
+              >
+                <p className="type-body font-medium text-ink transition-colors group-hover:text-blue">
+                  {patient.name}
+                </p>
                 <p className="type-micro font-normal text-ink-3">
                   {patient.id}
                   {" · "}
                   {patient.gender === "M" ? "Male" : patient.gender === "F" ? "Female" : "—"}
                   {patient.age != null && ` · ${patient.age} yrs`}
                 </p>
-              </div>
+              </Link>
 
               <div className="flex flex-wrap gap-1.5">
                 <ScorePill letter="S" value={patient.scores.sugar} band={scoreBand(patient.scores.sugar)} />

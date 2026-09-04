@@ -48,6 +48,7 @@ src/
     (app)/dashboard/       clinic overview (server-rendered, client-refreshed)
     (app)/history/         subject roster with latest scores
     (app)/subjects/        subject profiles, editable measurements
+    (app)/subjects/[id]/   one subject: demographics, score trends, test history
     api/auth/login|logout  session cookie lifecycle
     api/dashboard          per-day dashboard payload
     api/subjects/[id]      PATCH subject measurements (validated server-side)
@@ -55,6 +56,7 @@ src/
     respyr-api.ts          server-only client for the PHP endpoints
     dashboard.ts           aggregation — one settled call per upstream
     history.ts             subject roster aggregation
+    profile.ts             one subject's demographics, BMI/BMR and tests
     scores.ts              score model, bands, date helpers
     session.ts             cookie session (jose, HS256)
   middleware.ts            route gating (page routes only, never /api)
@@ -128,7 +130,7 @@ npm run lint && npm run typecheck && npm run build
 - [x] Clinic overview dashboard
 - [x] Test history
 - [x] Subjects (list and edit measurements)
-- [ ] Patient trends (`view-profile`)
+- [x] Subject profile / trends (`view-profile`)
 - [ ] PDF health report
 - [ ] Admin profile, password change, forgot-password
 

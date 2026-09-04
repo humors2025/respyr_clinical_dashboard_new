@@ -182,6 +182,38 @@ export async function fetchAllowance(loginId: string): Promise<Allowance | null>
 }
 
 /* ------------------------------------------------------------------ */
+/* Subject profile                                                     */
+/* ------------------------------------------------------------------ */
+
+/** Demographics for one subject: gender, age, height, weight. */
+export async function fetchProfileInfo(
+  loginId: string,
+  profileId: string,
+): Promise<Record<string, unknown> | null> {
+  const params = new URLSearchParams({ login_id: loginId, profile_id: profileId });
+  const endpoint = `${API_BASE}/data-interp_v1.php?${params}`;
+  const res = await request(endpoint, { method: "GET" });
+  const data = await parseJson<unknown>(res, endpoint);
+  if (Array.isArray(data)) return (data[0] as Record<string, unknown>) ?? null;
+  return (data as Record<string, unknown>) ?? null;
+}
+
+/**
+ * Every test this subject has taken, newest first, with the raw biomarker
+ * payloads the printed report needs.
+ */
+export async function fetchProfileTrends(
+  loginId: string,
+  profileId: string,
+): Promise<AnalyticsRow[]> {
+  const params = new URLSearchParams({ login_id: loginId, profile_id: profileId });
+  const endpoint = `${API_BASE}/encrp-trends-history-v2.php?${params}`;
+  const res = await request(endpoint, { method: "GET" });
+  const data = await parseJson<unknown>(res, endpoint);
+  return Array.isArray(data) ? (data as AnalyticsRow[]) : [];
+}
+
+/* ------------------------------------------------------------------ */
 /* Subjects                                                            */
 /* ------------------------------------------------------------------ */
 

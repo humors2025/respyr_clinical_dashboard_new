@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { HistoryData, SubjectRecord } from "@/lib/history";
 import { BAND_META, SCORE_KEYS, SCORE_META, scoreBand, type ScoreKey } from "@/lib/scores";
@@ -159,11 +160,18 @@ export function HistoryView({ data }: { data: HistoryData }) {
                     className="border-b border-line transition-colors last:border-0 hover:bg-surface"
                   >
                     <td className="px-5 py-3.5">
-                      <p className="type-body font-medium text-ink">{subject.name}</p>
-                      <p className="type-micro font-normal text-ink-3">
-                        {subject.id}
-                        {subject.gender && ` · ${subject.gender === "M" ? "Male" : "Female"}`}
-                      </p>
+                      <Link
+                        href={`/subjects/${encodeURIComponent(subject.id)}?name=${encodeURIComponent(subject.name)}`}
+                        className="group block"
+                      >
+                        <p className="type-body font-medium text-ink transition-colors group-hover:text-blue">
+                          {subject.name}
+                        </p>
+                        <p className="type-micro font-normal text-ink-3">
+                          {subject.id}
+                          {subject.gender && ` · ${subject.gender === "M" ? "Male" : "Female"}`}
+                        </p>
+                      </Link>
                     </td>
                     <td className="px-3 py-3.5 text-center">
                       <span className="type-body text-ink-2 tabular-nums">{subject.testsTaken}</span>
