@@ -1,0 +1,46 @@
+// Throwaway fixture server standing in for the humorstech PHP API.
+// All names/values are fabricated — no real patient data.
+import { createServer } from "node:http";
+
+const NAMES = [
+  ["Ishan Sinha","Male",28],["Arun Prakash","Male",52],["Meera Iyer","Female",34],
+  ["Shashi Mukesh","Male",58],["Nilu Bala","Female",54],["Priya Sharma","Female",31],
+  ["Rohan Desai","Male",22],["Kavya Nair","Female",45],["Vikram Rao","Male",61],
+  ["Ananya Bose","Female",26],["Farhan Qureshi","Male",39],["Divya Menon","Female",47],
+  ["Sanjay Gupta","Male",44],["Riya Kapoor","Female",19],
+];
+const seeded = (i,s) => { const x = Math.sin((i+1)*12.9898 + s*78.233)*43758.5453; return x - Math.floor(x); };
+const score  = (i,s) => Math.round((52 + seeded(i,s)*48)*10)/10;
+const pad = n => String(n).padStart(2,"0");
+
+createServer((req,res) => {
+  const now = new Date();
+  const p = req.url.split("?")[0];
+  res.setHeader("Content-Type","application/json");
+  let body;
+
+  if (p.includes("age-gender-diversity")) {
+    body = NAMES.map(([name,gender,age],i) => ({
+      profile_id:`subject${140+i}`, name, gender, age,
+      Db_Score:score(i,1), liver_score:score(i,2), Blow_Score:score(i,3), Gut_Score_per:score(i,4),
+      acetone_ppm:Math.round(seeded(i,5)*90)/10, ethnol_ppm:Math.round(seeded(i,6)*60)/10,
+      h2_ppm:Math.round(seeded(i,7)*40)/10,
+      dttm:`${pad(now.getMonth()+1)}/${pad(now.getDate())}/${now.getFullYear()} ${pad(8+(i%9))}:${pad((i*7)%60)}:00`,
+    }));
+  } else if (p.includes("data-weeks")) {
+    body = [];
+    for (let d=45; d>=0; d--) {
+      const day = new Date(now); day.setDate(day.getDate()-d);
+      for (let k=0, n=Math.floor(seeded(d,9)*6); k<n; k++)
+        body.push({ timestamp: Math.floor(day.getTime()/1000)+k*900 });
+    }
+  } else if (p.includes("onboard-pat")) {
+    body = { onboarded: 128 };
+  } else if (p.includes("testallow")) {
+    body = { test_allow:"true", clinical_score_count:214, test_no:500 };
+  } else {
+    res.statusCode = 404; body = { error:`unmocked ${p}` };
+  }
+  req.resume();
+  res.end(JSON.stringify(body));
+}).listen(3005, () => console.log("fixture API on :3005"));

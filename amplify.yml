@@ -1,0 +1,21 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # `npm ci` needs SESSION_SECRET at build time only if a page is
+        # statically evaluated; all clinic routes are force-dynamic, so the
+        # secret is required at runtime. Set it in
+        # Amplify Console → Hosting → Environment variables.
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*

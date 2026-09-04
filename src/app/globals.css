@@ -1,0 +1,289 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Respyr Web Design System — tokens sourced from the Figma file.
+   Do not invent values; extend this block instead.
+   ============================================================ */
+@theme {
+  /* Colours */
+  --color-page: #f5f7fa;
+  --color-card: #ffffff;
+  --color-dark: #252525;
+  --color-blue: #308bf9;
+  --color-blue-light: #e9f3ff;
+  --color-green: #3faf58;
+  --color-green-light: #eaffef;
+  --color-orange: #e48326;
+  --color-amber: #ffbf2d;
+  --color-amber-light: #fff8e6;
+  --color-red: #e74c3c;
+  --color-red-light: #fdeceb;
+
+  /* Text hierarchy */
+  --color-ink: #252525;
+  --color-ink-2: #535359;
+  --color-ink-3: #738298;
+  --color-ink-4: #a1a1a1;
+
+  /* Surfaces */
+  --color-line: #e1e6ed;
+  --color-surface: #f5f7fa;
+
+  /* Typography — Poppins is injected by next/font as --font-poppins */
+  --font-sans: var(--font-poppins), "Poppins", sans-serif;
+
+  /* Radii */
+  --radius-card: 15px;
+  --radius-input: 8px;
+  --radius-badge: 6px;
+  --radius-pill: 33px;
+
+  /* Elevation */
+  --shadow-card:
+    0 20px 60px rgba(37, 37, 37, 0.18), 0 6px 16px rgba(37, 37, 37, 0.08),
+    0 1px 3px rgba(37, 37, 37, 0.05);
+  --shadow-panel: 0 1px 3px rgba(37, 37, 37, 0.05);
+  --shadow-cta: 0 4px 12px rgba(37, 37, 37, 0.25);
+}
+
+/* ---------- Base ---------- */
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Typography scale.
+   Negative letter-spacing is a Respyr trademark — always applied.
+   ============================================================ */
+@utility type-page-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+@utility type-section {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.36px;
+}
+@utility type-brand {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+@utility type-body {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -0.26px;
+}
+@utility type-small {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: -0.24px;
+}
+@utility type-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.22px;
+}
+@utility type-micro {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+/* ============================================================
+   Components
+   ============================================================ */
+@utility panel {
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-panel);
+}
+
+@utility field-input {
+  width: 100%;
+  height: 42px;
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-input);
+  padding: 0 14px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-ink);
+  letter-spacing: 0.05em;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &::placeholder {
+    color: var(--color-ink-4);
+    letter-spacing: -0.24px;
+  }
+  &:focus {
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px var(--color-blue-light);
+  }
+  &[aria-invalid="true"] {
+    border-color: var(--color-red);
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+  }
+}
+
+/* Primary CTA is DARK, never blue — brand rule. */
+@utility btn-primary {
+  height: 44px;
+  background: var(--color-dark);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-card);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.26px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: var(--shadow-cta);
+  transition:
+    background 0.15s,
+    transform 0.1s,
+    box-shadow 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #3a3a3a;
+    box-shadow: 0 6px 16px rgba(37, 37, 37, 0.32);
+    transform: translateY(-1px);
+  }
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+@utility btn-ghost {
+  height: 36px;
+  padding: 0 14px;
+  background: var(--color-card);
+  color: var(--color-ink-2);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-input);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.24px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-blue);
+    color: var(--color-blue);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+@utility role-badge {
+  background: var(--color-blue-light);
+  color: var(--color-blue);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  padding: 2px 8px;
+  border-radius: var(--radius-badge);
+  display: inline-flex;
+  align-items: center;
+}
+
+@utility tag-pill {
+  background: var(--color-green-light);
+  border: 1px solid rgba(63, 175, 88, 0.2);
+  color: var(--color-green);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.22px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ---------- Animations ---------- */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes pop-in {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@utility animate-modal-in {
+  animation: modal-in 0.22s ease-out both;
+}
+@utility animate-pop-in {
+  animation: pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@utility animate-rise {
+  animation: rise 0.3s ease-out both;
+}
+@utility animate-spin-slow {
+  animation: spin 0.7s linear infinite;
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
