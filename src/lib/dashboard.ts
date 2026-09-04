@@ -42,7 +42,6 @@ export interface DashboardData {
   };
   allowance: Allowance | null;
   demographics: { male: number; female: number; malePct: number; femalePct: number };
-  concern: { healthy: number; mild: number; serious: number };
   metrics: MetricSummary[];
   segments: SegmentCell[];
   testSeries: { day: string; count: number }[];
@@ -96,15 +95,6 @@ export async function getDashboardData(
   const male = patients.filter((p) => p.gender === "M").length;
   const female = patients.filter((p) => p.gender === "F").length;
   const gendered = male + female;
-
-  /* ---- concern tiers: worst band across the four scores ---- */
-  const concern = { healthy: 0, mild: 0, serious: 0 };
-  for (const p of patients) {
-    const bands = SCORE_KEYS.map((k) => scoreBand(p.scores[k]));
-    if (bands.includes("poor")) concern.serious++;
-    else if (bands.includes("fair")) concern.mild++;
-    else concern.healthy++;
-  }
 
   /* ---- per-metric averages and band counts ---- */
   const metrics: MetricSummary[] = SCORE_KEYS.map((key) => {
@@ -169,7 +159,6 @@ export async function getDashboardData(
       malePct: gendered ? Math.round((male / gendered) * 100) : 0,
       femalePct: gendered ? Math.round((female / gendered) * 100) : 0,
     },
-    concern,
     metrics,
     segments,
     testSeries,
