@@ -12,18 +12,9 @@ import {
   ageBucketIndex,
   normalizePatient,
   SCORE_KEYS,
-  scoreBand,
-  type Band,
   type Patient,
   type ScoreKey,
 } from "./scores";
-
-export interface MetricSummary {
-  key: ScoreKey;
-  label: string;
-  average: number;
-  counts: Record<Band, number>;
-}
 
 export interface SegmentCell {
   gender: "M" | "F";
@@ -42,7 +33,6 @@ export interface DashboardData {
   };
   allowance: Allowance | null;
   demographics: { male: number; female: number; malePct: number; femalePct: number };
-  metrics: MetricSummary[];
   segments: SegmentCell[];
   testSeries: { day: string; count: number }[];
   patients: Patient[];
@@ -96,19 +86,6 @@ export async function getDashboardData(
   const female = patients.filter((p) => p.gender === "F").length;
   const gendered = male + female;
 
-  /* ---- per-metric averages and band counts ---- */
-  const metrics: MetricSummary[] = SCORE_KEYS.map((key) => {
-    const values = patients.map((p) => p.scores[key]).filter((v) => v > 0);
-    const counts: Record<Band, number> = { good: 0, fair: 0, poor: 0 };
-    for (const v of values) counts[scoreBand(v)]++;
-    return {
-      key,
-      label: key.charAt(0).toUpperCase() + key.slice(1),
-      average: average(values),
-      counts,
-    };
-  });
-
   /* ---- gender x age-bucket segments ---- */
   const segments: SegmentCell[] = [];
   for (const gender of ["F", "M"] as const) {
@@ -159,7 +136,6 @@ export async function getDashboardData(
       malePct: gendered ? Math.round((male / gendered) * 100) : 0,
       femalePct: gendered ? Math.round((female / gendered) * 100) : 0,
     },
-    metrics,
     segments,
     testSeries,
     patients,

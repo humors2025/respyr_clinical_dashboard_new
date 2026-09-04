@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
-import { MetricBreakdown, type MetricFilter } from "@/components/dashboard/metric-breakdown";
 import { PatientList } from "@/components/dashboard/patient-list";
 import { SegmentHeatmap } from "@/components/dashboard/segment-heatmap";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
@@ -40,7 +39,6 @@ export function DashboardView({ initialData }: { initialData: DashboardData }) {
   const router = useRouter();
   const [data, setData] = useState(initialData);
   const [date, setDate] = useState(initialData.date);
-  const [filter, setFilter] = useState<MetricFilter>({ metric: null, band: null });
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -59,7 +57,6 @@ export function DashboardView({ initialData }: { initialData: DashboardData }) {
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const payload: DashboardData = await res.json();
       setData(payload);
-      setFilter({ metric: null, band: null });
     } catch {
       setError("Could not refresh the dashboard. Check your connection and try again.");
     }
@@ -188,14 +185,7 @@ export function DashboardView({ initialData }: { initialData: DashboardData }) {
             <SegmentHeatmap segments={data.segments} hasData={hasData} />
           </div>
 
-          <MetricBreakdown
-            metrics={data.metrics}
-            filter={filter}
-            onFilterChange={setFilter}
-            hasData={hasData}
-          />
-
-          <PatientList patients={data.patients} filter={filter} search={search} />
+          <PatientList patients={data.patients} search={search} />
         </div>
       </div>
 

@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { MetricFilter } from "./metric-breakdown";
-import { SCORE_META, scoreBand, type Patient } from "@/lib/scores";
+import { scoreBand, type Patient } from "@/lib/scores";
 import { EmptyState, Panel, PanelHeader, ScorePill } from "@/components/ui";
 
 function relativeDate(iso: string | null): string {
@@ -19,44 +18,32 @@ function relativeDate(iso: string | null): string {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-export function PatientList({
-  patients,
-  filter,
-  search,
-}: {
-  patients: Patient[];
-  filter: MetricFilter;
-  search: string;
-}) {
+export function PatientList({ patients, search }: { patients: Patient[]; search: string }) {
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return patients
-      .filter((p) => {
-        if (filter.metric && filter.band && scoreBand(p.scores[filter.metric]) !== filter.band) {
-          return false;
-        }
-        if (!query) return true;
-        return p.name.toLowerCase().includes(query) || p.id.toLowerCase().includes(query);
-      })
+      .filter(
+        (p) =>
+          !query ||
+          p.name.toLowerCase().includes(query) ||
+          p.id.toLowerCase().includes(query),
+      )
       .sort((a, b) => {
         const at = a.takenAt ? Date.parse(a.takenAt) : 0;
         const bt = b.takenAt ? Date.parse(b.takenAt) : 0;
         return bt - at;
       });
-  }, [patients, filter, search]);
+  }, [patients, search]);
 
-  const filterLabel =
-    filter.metric && filter.band
-      ? `${SCORE_META[filter.metric].label} · ${filter.band}`
-      : null;
+  const searching = search.trim().length > 0;
 
   return (
     <Panel className="overflow-hidden">
       <PanelHeader
         title="Test log"
         subtitle={
-          filterLabel
-            ? `Filtered by ${filterLabel} — ${filtered.length} of ${patients.length}`
+          searching
+            ? `${filtered.length} of ${patients.length} matching "${search.trim()}"`
             : `${filtered.length} test${filtered.length === 1 ? "" : "s"}`
         }
       />
@@ -67,7 +54,7 @@ export function PatientList({
           hint={
             patients.length === 0
               ? "Try another date from the picker above."
-              : "Adjust the search term or clear the parameter filter."
+              : "Check the spelling, or clear the search box."
           }
         />
       ) : (

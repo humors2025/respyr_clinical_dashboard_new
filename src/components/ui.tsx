@@ -78,24 +78,3 @@ export function EmptyState({ title, hint }: { title: string; hint?: string }) {
     </div>
   );
 }
-
-/** Distribution bar: good / fair / poor as proportional segments. */
-export function DistributionBar({ counts }: { counts: Record<Band, number> }) {
-  const total = counts.good + counts.fair + counts.poor;
-  if (total === 0) {
-    return <div className="h-1.5 w-full rounded-full bg-surface" />;
-  }
-  return (
-    <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-surface">
-      {(Object.keys(BAND_META) as Band[]).map((band) =>
-        counts[band] > 0 ? (
-          <div
-            key={band}
-            style={{ width: `${(counts[band] / total) * 100}%`, background: BAND_META[band].color }}
-            title={`${BAND_META[band].label}: ${counts[band]}`}
-          />
-        ) : null,
-      )}
-    </div>
-  );
-}
