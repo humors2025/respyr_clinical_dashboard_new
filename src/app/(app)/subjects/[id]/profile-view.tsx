@@ -187,10 +187,11 @@ export function ProfileView({ data }: { data: ProfileData }) {
                   const value = test.scores[tab];
                   const band = scoreBand(value);
                   return (
-                    <li
-                      key={`${test.rawDttm}-${i}`}
-                      className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5 transition-colors hover:bg-surface"
-                    >
+                    <li key={`${test.rawDttm}-${i}`}>
+                      <Link
+                        href={`/subjects/${encodeURIComponent(subject.id)}/report?t=${encodeURIComponent(test.rawDttm)}`}
+                        className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5 transition-colors hover:bg-surface"
+                      >
                       <div className="min-w-[180px] flex-1">
                         <p className="type-body text-ink">{formatDateTime(test.takenAt)}</p>
                         <p className="type-micro font-normal text-ink-3">
@@ -211,7 +212,11 @@ export function ProfileView({ data }: { data: ProfileData }) {
                         >
                           {value > 0 ? BAND_META[band].label : ""}
                         </span>
+                        <svg className="text-ink-4" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="m9 6 6 6-6 6" />
+                        </svg>
                       </div>
+                      </Link>
                     </li>
                   );
                 })}

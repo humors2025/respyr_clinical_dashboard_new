@@ -52,11 +52,14 @@ src/
     api/auth/login|logout  session cookie lifecycle
     api/dashboard          per-day dashboard payload
     api/subjects/[id]      PATCH subject measurements (validated server-side)
+    api/report/email       proxies the PDF to the legacy PHP mailer
   lib/
     respyr-api.ts          server-only client for the PHP endpoints
     dashboard.ts           aggregation — one settled call per upstream
     history.ts             subject roster aggregation
     profile.ts             one subject's demographics, BMI/BMR and tests
+    report.ts              one printed report: spirometry, lung-flow, trends
+    report-text.ts         clinical copy, GENERATED from methods.php
     scores.ts              score model, bands, date helpers
     session.ts             cookie session (jose, HS256)
   middleware.ts            route gating (page routes only, never /api)
@@ -102,6 +105,7 @@ Then add `RESPYR_API_BASE=http://localhost:3005` to `.env.local` and restart `np
 | `RESPYR_API_BASE` | no | Defaults to `https://humorstech.com/api`. |
 | `RESPYR_CLINIC_BASE` | no | Defaults to the `humors_app/app_final/clinical` path. |
 | `RESPYR_API_TIMEOUT_MS` | no | Upstream timeout, default `15000`. |
+| `RESPYR_MAILER_URL` | no | Defaults to the legacy `send_email1.php`. |
 
 **Before the first deploy**, set `SESSION_SECRET` in
 Amplify Console → Hosting → Environment variables. Use a different value from the one in
@@ -131,7 +135,7 @@ npm run lint && npm run typecheck && npm run build
 - [x] Test history
 - [x] Subjects (list and edit measurements)
 - [x] Subject profile / trends (`view-profile`)
-- [ ] PDF health report
+- [x] PDF health report (download + email)
 - [ ] Admin profile, password change, forgot-password
 
 ---

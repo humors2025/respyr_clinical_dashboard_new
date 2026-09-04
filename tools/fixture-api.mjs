@@ -54,7 +54,12 @@ createServer((req,res) => {
         acetone_ppm:Math.round(seeded(k,25)*90)/10, h2_ppm:Math.round(seeded(k,26)*40)/10,
         ethnol_ppm:Math.round(seeded(k,27)*60)/10, FEV1_L:Math.round((1.8+seeded(k,28)*1.9)*100)/100,
         maxpress:993.19, blow_raw_values:"908.18,935.55,947.27,966.57,984.28,989.96,988.77,974.14,955.92,930.55",
-        respiratory_fvc_json:JSON.stringify({"Respyr_Measured":{"FEV1(L)":2.48,"FVC(L)":3.32}}),
+        respiratory_fvc_json:JSON.stringify({
+          "Comparison_with_Predicted(%)":{"FEV1_vs_Predicted":72.4,"FVC_vs_Predicted":81.3,"Ratio_vs_Predicted":89.1},
+          "Predicted":{"FEV1(L)":3.42,"FEV1/FVC_Ratio(%)":83.86,"FVC(L)":4.08},
+          "Respiratory Score(%)":{"Respiratory Score(%)":74.6},
+          "Respyr_Measured":{"FEV1(L)":2.48,"FEV1/FVC Ratio(%)":74.7,"FVC(L)":3.32,"PEF(L/min)":388.4}
+        }),
       });
     }
   } else if (p.includes("fetch_clinical_profiles2")) {
