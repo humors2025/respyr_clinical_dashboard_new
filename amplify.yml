@@ -3,13 +3,21 @@ frontend:
   phases:
     preBuild:
       commands:
-        # `npm ci` needs SESSION_SECRET at build time only if a page is
-        # statically evaluated; all clinic routes are force-dynamic, so the
-        # secret is required at runtime. Set it in
-        # Amplify Console → Hosting → Environment variables.
         - npm ci
     build:
       commands:
+        # Environment variables set in the Amplify console reach the build
+        # container but NOT the SSR runtime — Amplify does this deliberately so
+        # build-time secrets aren't exposed to server components.
+        #
+        # Next.js reads .env.production at build time and embeds it into the
+        # server runtime config, so promote the variables the server genuinely
+        # needs. See:
+        # https://docs.aws.amazon.com/amplify/latest/userguide/ssr-environment-variables.html
+        - env | grep -e SESSION_SECRET -e RESPYR_ >> .env.production || true
+        # Fail loudly here rather than shipping a build that 500s on every
+        # sign-in because the secret silently went missing.
+        - grep -q '^SESSION_SECRET=' .env.production || { echo "FATAL: SESSION_SECRET is not set in the Amplify build environment. Add it under Hosting > Environment variables."; exit 1; }
         - npm run build
   artifacts:
     baseDirectory: .next

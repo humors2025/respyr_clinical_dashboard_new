@@ -98,8 +98,19 @@ Then add `RESPYR_API_BASE=http://localhost:3005` to `.env.local` and restart `np
 | `RESPYR_API_TIMEOUT_MS` | no | Upstream timeout, default `15000`. |
 
 **Before the first deploy**, set `SESSION_SECRET` in
-Amplify Console → Hosting → Environment variables. Without it, every authenticated route
-fails at runtime. Use a different value from the one in local `.env.local`.
+Amplify Console → Hosting → Environment variables. Use a different value from the one in
+local `.env.local`.
+
+Note that Amplify console variables reach the *build* container but not the SSR *runtime* —
+that is deliberate on AWS's part. `amplify.yml` therefore promotes the ones the server needs
+into `.env.production` during the build, which Next.js embeds into its server runtime config.
+Any new server-side variable must either be named `SESSION_SECRET` or start with `RESPYR_`,
+or it will not survive to runtime. The build aborts with a clear message if `SESSION_SECRET`
+is missing, rather than deploying something that 500s on every sign-in.
+
+Because of this, the secret is readable by anyone who can access the deployment artifacts —
+i.e. users of your AWS account. For a stronger boundary, move it to AWS Secrets Manager and
+read it through the SSR compute role.
 
 ## Checks
 
