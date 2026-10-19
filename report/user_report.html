@@ -1539,7 +1539,7 @@
         const jwt = localStorage.getItem("jwt_token") || "";
         let src = null;
         try {
-            const res = await fetch(`${window.NODE_API || "http://localhost:3001"}/api/clinic/logos`, {
+            const res = await fetch(`${window.NODE_API || "https://u5fnjbxhhzx3xb4be224i7z3e40tbbua.lambda-url.ap-south-1.on.aws"}/api/clinic/logos`, {
                 method: "POST",
                 headers: jwt
                     ? { "Content-Type": "application/json", Authorization: "Bearer " + jwt }
@@ -1825,7 +1825,7 @@ const fileName = `REPORT_${safeName}_${formattedDateTime}.pdf`;
         // The sender's brand name is no longer posted from here - the backend
         // takes it from the token, so one clinic cannot mail as another.
         const jwtForMail = localStorage.getItem("jwt_token") || "";
-        fetch(`${window.NODE_API || "http://localhost:3001"}/api/dashboard/send-report-email`, {
+        fetch(`${window.NODE_API || "https://u5fnjbxhhzx3xb4be224i7z3e40tbbua.lambda-url.ap-south-1.on.aws"}/api/dashboard/send-report-email`, {
             method: "POST",
             headers: jwtForMail ? { Authorization: "Bearer " + jwtForMail } : {},
             body: formData,
@@ -1884,7 +1884,7 @@ const fileName = `REPORT_${safeName}_${formattedDateTime}.pdf`;
             const profileId = urlParams.get("profile_id");
 
             const t = localStorage.getItem("jwt_token");
-            const response = await fetch(`${window.NODE_API || "http://localhost:3001"}/api/dashboard/trend-7-days?login_id=${loginId}&profile_id=${profileId}`, {
+            const response = await fetch(`${window.NODE_API || "https://u5fnjbxhhzx3xb4be224i7z3e40tbbua.lambda-url.ap-south-1.on.aws"}/api/dashboard/trend-7-days?login_id=${loginId}&profile_id=${profileId}`, {
                 headers: t ? { Authorization: "Bearer " + t } : {},
             });
             let data = await response.json();
