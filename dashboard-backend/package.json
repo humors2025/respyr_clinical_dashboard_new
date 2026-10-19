@@ -1,0 +1,19 @@
+{
+  "name": "respyr-dashboard-backend",
+  "version": "1.0.0",
+  "description": "Web dashboard backend for Respyr Clinical (Node port of clinical-required/api/*.php). Deployed separately from the mobile app backend.",
+  "main": "lambda.js",
+  "scripts": {
+    "start": "node local.js"
+  },
+  "dependencies": {
+    "@codegenie/serverless-express": "^4.17.1",
+    "aws-ssl-profiles": "^1.1.2",
+    "bcryptjs": "^3.0.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
+    "mysql2": "^3.23.3",
+    "nodemailer": "^10.1.2"
+  }
+}
