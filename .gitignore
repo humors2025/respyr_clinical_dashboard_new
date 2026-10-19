@@ -41,10 +41,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# ─── Legacy PHP dashboard (kept locally as reference, never published) ───
-# Contains hardcoded SMTP credentials and the JWT signing secret.
-/clinical-v2/
-/clinical-dashboard_v2/
+# ─── PHP dashboard (the currently live product) ───
+# Now safe to publish: every credential was moved out of these folders in
+# Oct 2026 (backend logic ported to dashboard-backend/, retired files with
+# hardcoded secrets stay local in _unused/, which is never committed).
+/_unused/
 
 # macOS
 **/.DS_Store

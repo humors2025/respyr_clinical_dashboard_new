@@ -1,0 +1,254 @@
+<?php
+// A valid reset token (from the OTP step) is required to view this page.
+if (!isset($_GET['token']) || empty(trim($_GET['token']))) {
+    header("Location: ../");
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Respyr Portal &mdash; New password</title>
+    <link rel="shortcut icon" href="https://respyr.in/fav.svg" type="image/x-icon" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <style>
+        :root {
+            --canvas: #e8edf4; --card: #ffffff; --dark: #252525;
+            --blue: #308bf9; --blue-light: #e9f3ff; --red: #e74c3c; --green: #3faf58;
+            --tx1: #252525; --tx2: #535359; --tx3: #738298;
+            --line: #e1e6ed; --edge: #c8d3e2;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Poppins", sans-serif; background: var(--canvas);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .shell {
+            display: flex; width: 100%; max-width: 1020px; min-height: 600px;
+            background: var(--card); border: 1px solid var(--edge); border-radius: 20px; overflow: hidden;
+            box-shadow: 0 1px 3px rgba(37, 37, 37, 0.05), 0 24px 70px rgba(37, 37, 37, 0.16);
+            animation: cardIn 0.25s ease-out;
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: scale(0.98) translateY(10px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .hero {
+            flex: 1.15; background: linear-gradient(165deg, #eaf3ff 0%, #dcebfd 60%, #d3e6fc 100%);
+            display: flex; align-items: center; justify-content: center; padding: 44px 40px;
+        }
+        .hero-inner { max-width: 430px; text-align: center; }
+        .hero-inner h2 { font-size: 21px; font-weight: 600; letter-spacing: -0.42px; color: #1b4e9b; line-height: 1.35; margin-bottom: 6px; }
+        .hero-inner p { font-size: 12.5px; letter-spacing: -0.25px; color: #4a6ea8; margin-bottom: 22px; }
+        /* aspect-ratio + cover crops off the blurred watermark baked into the
+           bottom of the source photo (shared with the report, so not re-cut) */
+        .hero-img { width: 100%; aspect-ratio: 595 / 430; object-fit: cover; object-position: top; border-radius: 16px; box-shadow: 0 16px 40px rgba(27, 78, 155, 0.22); display: block; }
+        .panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 44px 40px; }
+        .panel-inner { width: 100%; max-width: 330px; }
+        .logo { display: block; margin: 0 auto 22px; height: 32px; }
+        h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.4px; color: var(--tx1); text-align: center; margin-bottom: 4px; }
+        .sub { font-size: 12.5px; color: var(--tx3); letter-spacing: -0.25px; text-align: center; margin-bottom: 26px; line-height: 1.5; }
+        .field { margin-bottom: 16px; }
+        .field label { display: block; font-size: 12px; font-weight: 500; letter-spacing: -0.24px; color: var(--tx2); margin-bottom: 6px; }
+        .input-wrap { position: relative; }
+        .input-wrap input {
+            width: 100%; height: 44px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+            padding: 0 42px 0 14px; font-family: "Poppins", sans-serif; font-size: 13px; letter-spacing: -0.26px;
+            color: var(--tx1); outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .input-wrap input::placeholder { color: #a9b3c4; }
+        .input-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-light); }
+        .toggle-eye {
+            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            color: #a9b3c4; font-size: 13px; cursor: pointer; transition: color 0.15s;
+        }
+        .toggle-eye:hover { color: var(--tx2); }
+        .alert-err {
+            display: none; font-size: 12px; letter-spacing: -0.24px; color: var(--red);
+            background: #fdecea; border: 1px solid rgba(231, 76, 60, 0.25); border-radius: 8px;
+            padding: 9px 12px; margin-bottom: 16px; align-items: center; gap: 8px;
+        }
+        .alert-err.show { display: flex; animation: shake 0.3s; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+        .btn-primary-dark {
+            width: 100%; height: 46px; background: var(--dark); color: #fff; border: none; border-radius: 15px;
+            font-family: "Poppins", sans-serif; font-size: 13.5px; font-weight: 600; letter-spacing: -0.27px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px;
+            box-shadow: 0 4px 12px rgba(37, 37, 37, 0.25); transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+        }
+        .btn-primary-dark:hover { background: #3a3a3a; box-shadow: 0 6px 16px rgba(37, 37, 37, 0.32); transform: translateY(-1px); }
+        .btn-primary-dark:active { transform: translateY(0); }
+        .btn-primary-dark:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* success state */
+        #password-update-message { display: none; text-align: center; }
+        #password-update-message.show { display: block; }
+        .icon-wrap { width: 76px; height: 76px; background: #eaffef; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; animation: popIn 0.3s ease-out; }
+        .icon-inner { width: 52px; height: 52px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .icon-inner i { color: #fff; font-size: 20px; }
+        @keyframes popIn {
+            from { transform: scale(0.4); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+        .backlink {
+            display: block; text-align: center; margin-top: 18px; font-size: 12.5px; font-weight: 500;
+            letter-spacing: -0.25px; color: var(--blue); text-decoration: none;
+        }
+        .backlink:hover { text-decoration: underline; }
+
+        @media (max-width: 880px) {
+            .shell { max-width: 420px; min-height: 0; }
+            .hero { display: none; }
+            .panel { padding: 40px 32px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <aside class="hero">
+            <div class="hero-inner">
+                <h2>India's first breath-based<br />health screening device</h2>
+                <p>Four health scores from a single breath.</p>
+                <img class="hero-img" src="../../../clinical-dashboard_v2/report/report_images/1.jpg" alt="Respyr breath screening device in use" />
+            </div>
+        </aside>
+
+        <section class="panel">
+            <div class="panel-inner">
+                <img class="logo" src="../../../clinical-dashboard_v2/assets/images/logo/logo.svg" alt="Respyr" />
+
+                <form id="loginForm" class="update_password">
+                    <h1>Set a new password</h1>
+                    <p class="sub">Choose a new password for your account.</p>
+
+                    <div class="alert-err" id="passwordMsg"></div>
+
+                    <div class="field">
+                        <label for="newPassword">New password</label>
+                        <div class="input-wrap">
+                            <input class="input-pass" id="newPassword" type="password" placeholder="New password" autocomplete="new-password" />
+                            <i class="fa-regular fa-eye-slash toggle-eye"></i>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="confirmPassword">Confirm new password</label>
+                        <div class="input-wrap">
+                            <input class="input-pass" id="confirmPassword" type="password" placeholder="Repeat new password" autocomplete="new-password" />
+                            <i class="fa-regular fa-eye-slash toggle-eye"></i>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary-dark" id="updateBtn">
+                        Update password <i class="fa-solid fa-key"></i>
+                    </button>
+                </form>
+
+                <div id="password-update-message">
+                    <div class="icon-wrap"><div class="icon-inner"><i class="fa-solid fa-check"></i></div></div>
+                    <h1>Password changed</h1>
+                    <p class="sub">Your password has been updated successfully.<br />You can now sign in with it.</p>
+                    <a class="backlink" href="../"><i class="fa-solid fa-arrow-left-long"></i>&nbsp; Back to login</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+<script>
+// Show/Hide Password
+document.querySelectorAll(".toggle-eye").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+        const input = this.parentElement.querySelector("input");
+        const hidden = input.type === "password";
+        input.type = hidden ? "text" : "password";
+        this.classList.toggle("fa-eye", hidden);
+        this.classList.toggle("fa-eye-slash", !hidden);
+    });
+});
+
+// Submit handler
+document.getElementById("loginForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetToken = urlParams.get("token");
+    const msgEl = document.getElementById("passwordMsg");
+    const updateBtn = document.getElementById("updateBtn");
+
+    const passwordFields = document.querySelectorAll(".input-pass");
+    const password = passwordFields[0].value.trim();
+    const confirmPassword = passwordFields[1].value.trim();
+
+    msgEl.textContent = "";
+    msgEl.classList.remove("show");
+
+    function showErr(text) { msgEl.textContent = text; msgEl.classList.add("show"); }
+
+    if (!resetToken) {
+        showErr("Reset link is invalid. Please start again.");
+        return;
+    }
+
+    if (!password || !confirmPassword) {
+        showErr("Please enter both password fields.");
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showErr("Passwords do not match.");
+        return;
+    }
+
+    updateBtn.disabled = true;
+    updateBtn.innerHTML = "Updating&hellip;";
+
+    try {
+        // Node backend — LOCAL value; swap to the Lambda URL for production.
+        const NODE_API = "http://localhost:3001";
+        const response = await fetch(`${NODE_API}/api/dashboard/forgot-password/reset`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reset_token: resetToken, new_password: password }),
+        });
+        const data = await response.json();
+
+        if (data.success === true) {
+            document.getElementById("loginForm").style.display = "none";
+            document.getElementById("password-update-message").classList.add("show");
+
+            // ✅ Notify Flutter about success
+            if (window.FlutterChannel) {
+                FlutterChannel.postMessage("password_updated");
+            }
+        } else {
+            showErr(data.message || "Failed to update password.");
+
+            // ❌ Notify Flutter about failure
+            if (window.FlutterChannel) {
+                FlutterChannel.postMessage("update_failed");
+            }
+        }
+    } catch (error) {
+        showErr("Error: " + error.message);
+
+        // ⚠️ Notify Flutter about error
+        if (window.FlutterChannel) {
+            FlutterChannel.postMessage("update_error");
+        }
+    }
+
+    updateBtn.disabled = false;
+    updateBtn.innerHTML = 'Update password <i class="fa-solid fa-key"></i>';
+});
+</script>
+</body>
+</html>

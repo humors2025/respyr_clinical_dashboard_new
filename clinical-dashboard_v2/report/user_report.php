@@ -1,0 +1,2131 @@
+<?php
+
+
+
+// Access all GET parameters
+$login_id = $_GET['login_id'] ?? '';
+$profile_id = $_GET['profile_id'] ?? '';
+$sugar = $_GET['sugar'] ?? 0;
+$liver = $_GET['liver'] ?? 0;
+$resp = $_GET['resp'] ?? 0;
+$guts = $_GET['guts'] ?? 0;
+$dttm = $_GET['dttm'] ?? '';
+$name = $_GET['name'] ?? '';
+$gender = $_GET['gender'] ?? 'male';
+$height = $_GET['height'] ?? 0;
+$weight = $_GET['weight'] ?? 0;
+$age = $_GET['age'] ?? 0;
+$dttm = $_GET['dttm'] ?? 0;
+
+
+
+
+$acetone_ppm = $_GET['acetone_ppm'] ?? 0;
+$ethanol_ppm = $_GET['ethnol_ppm'] ?? 0;
+$h2_ppm = $_GET['h2_ppm'] ?? 0;
+
+// biomarkers print with 2 decimals — raw floats have no place on a report
+if (is_numeric($acetone_ppm)) $acetone_ppm = round((float)$acetone_ppm, 2);
+if (is_numeric($ethanol_ppm)) $ethanol_ppm = round((float)$ethanol_ppm, 2);
+if (is_numeric($h2_ppm))      $h2_ppm      = round((float)$h2_ppm, 2);
+
+// one display format for the test date: "04 Sep 2026, 18:13"
+$dttm_ts   = $dttm ? strtotime($dttm) : false;
+$dttm_disp = $dttm_ts ? date('d M Y, H:i', $dttm_ts) : $dttm;
+
+$respiratoryJson = $_GET['respiratory_fvc_json'] ?? null;
+$peak = $_GET['maxpress'] ?? '';
+
+
+/*
+$respiratoryJson = '{
+    "Comparison_with_Predicted(%)":{
+        "FEV1_vs_Predicted":22.48,
+        "FVC_vs_Predicted":32.76,
+        "Ratio_vs_Predicted":68.62
+    },
+    "Predicted":{
+        "FEV1(L)":3.42,
+        "FEV1/FVC_Ratio(%)":83.86,
+        "FVC(L)":4.08
+    },
+    "Respiratory Score(%)":{
+        "Respiratory Score(%)":51.239135724438
+    },
+    "Respyr_Measured":{
+        "FEV1(L)":0.77,
+        "FEV1/FVC Ratio(%)":57.55,
+        "FVC(L)":1.338,
+        "PEF(L/min)":103.33
+    }
+}';
+
+*/
+
+
+
+include "methods.php";
+
+?>
+
+<style>
+
+.report-logo-img{
+
+ max-width:150px;
+
+}
+</style>
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <!-- The report is a fixed A4 document (210mm wide). Phones render it at its
+             natural width and scale it to fit, like a PDF viewer — this keeps the
+             on-screen report and the html2canvas PDF identical on every device. -->
+        <meta name="viewport" content="width=840" />
+        <title><?php echo 'RESPYR_REPORT' . $profile_id; ?></title>
+        <link rel="stylesheet" href="report_css/style.css" />
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <style>
+            /* ===== Respyr polish — visual shell only ===== */
+            body { background: #e8edf4 !important; font-family: "Poppins", sans-serif !important; }
+            .header {
+                position: sticky; top: 0; z-index: 50;
+                background: #fff !important; border-bottom: 1px solid #dce3ed;
+                padding: 10px 24px !important;
+                box-shadow: 0 2px 10px rgba(50, 65, 90, 0.05);
+            }
+            .header button { font-family: "Poppins", sans-serif !important; font-size: 13px !important; font-weight: 500; letter-spacing: -0.26px; }
+            .header .back {
+                display: inline-flex; align-items: center; gap: 6px;
+                background: #fff; border: 1px solid #dce3ed !important; border-radius: 8px;
+                padding: 7px 14px 7px 8px; color: #535359; cursor: pointer;
+            }
+            .header .back:hover { background: #f5f7fa; }
+            .header .back svg { width: 22px; height: 22px; }
+            .header .right-wrapper button {
+                display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+                border-radius: 8px; padding: 9px 16px; border: none;
+            }
+            .header .right-wrapper button svg { width: 20px; height: 20px; }
+            #downloadBtn { background: #252525 !important; color: #fff !important; }
+            #downloadBtn svg path { stroke: #fff; }
+            #downloadBtn:hover { background: #3a3a3a !important; }
+            #emailBtn { background: #308bf9 !important; color: #fff !important; }
+            #emailBtn:hover { background: #2277e0 !important; }
+            .main { padding: 28px 16px 48px; }
+            /* Google Translate widget: keep the select, drop the branding text,
+               and dress it like the rest of the action bar */
+            #google_translate_element .goog-te-gadget { font-size: 0 !important; color: transparent !important; }
+            #google_translate_element select {
+                font-family: "Poppins", sans-serif !important; font-size: 12.5px !important;
+                padding: 8px 10px; border: 1px solid #dce3ed !important; border-radius: 8px;
+                color: #535359 !important; background: #fff; outline: none; cursor: pointer;
+            }
+            .pdf-page-wrapper { box-shadow: 0 1px 2px rgba(37, 37, 37, 0.05), 0 12px 30px rgba(50, 65, 90, 0.1); }
+            /* Phones: the viewport is locked to the document width (840), so media
+               queries can't see the device — JS tags <html> with .phone-doc instead.
+               The whole page is scaled ~0.46 on a 390px phone, so the sticky action
+               bar gets larger type/padding to stay readable and tappable. */
+            html.phone-doc .header { padding: 14px 20px !important; }
+            html.phone-doc .header button { font-size: 24px !important; }
+            html.phone-doc .header .back { padding: 12px 22px 12px 14px; border-radius: 12px; }
+            html.phone-doc .header .back svg { width: 34px; height: 34px; }
+            html.phone-doc .header .right-wrapper button { padding: 16px 26px; border-radius: 12px; gap: 12px; }
+            html.phone-doc .header .right-wrapper button svg { width: 32px; height: 32px; }
+        </style>
+        <script>
+            if (screen.width < 600) document.documentElement.classList.add("phone-doc");
+        </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <script type="text/javascript">
+            function googleTranslateElementInit() {
+                new google.translate.TranslateElement(
+                    {
+                        pageLanguage: "en",
+                        includedLanguages: "hi,kn,mr,ta,te",
+                    },
+                    "google_translate_element"
+                );
+            }
+        </script>
+        <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    </head>
+    <body>
+        <!-- Inside the dashboard's report dialog the whole action bar hides:
+             the dialog's own slim header proxies Download / Send clicks to
+             #downloadBtn / #emailBtn, and its × replaces Back. -->
+        <script>if (window.self !== window.top) document.documentElement.classList.add("in-modal");</script>
+        <style>html.in-modal .header { display: none !important; }</style>
+        <div class="header">
+            <button class="back notranslate" onclick="window.history.back()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="34" height="32" viewBox="0 0 34 32" fill="none">
+                    <path d="M24 16.75C24.4142 16.75 24.75 16.4142 24.75 16C24.75 15.5858 24.4142 15.25 24 15.25V16.75ZM8.46967 15.4697C8.17678 15.7626 8.17678 16.2374 8.46967 16.5303L13.2426 21.3033C13.5355 > fill="#252525" />
+                </svg>
+                Back
+            </button>
+            <div id="google_translate_element"></div>
+
+            <div class="right-wrapper notranslate" style="display:flex; gap:25px">
+                <button class="download_report btn-primary" id="downloadBtn">
+
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_31634_13003)">
+<mask id="mask0_31634_13003" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
+<path d="M32 0H0V32H32V0Z" fill="black"/>
+</mask>
+<g mask="url(#mask0_31634_13003)">
+<path d="M6 17.004V26H26V17" stroke="#252525" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path d="M11 15.9727L15.75 20.7227L20.5 15.9727M15.7542 7.00043V20.7227" stroke="#252525" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_31634_13003">
+<rect width="32" height="32" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+
+
+                    Download pdf
+                </button>
+
+                <button class="download_report btn-danger notranslate" id="emailBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M17.1836 3.5H6.68359C4.47445 3.5 2.68359 5.29086 2.68359 7.5V16.5C2.68359 18.7091 4.47445 20.5 6.68359 20.5H17.1836C19.3927 20.5 21.1836 18.7091 21.1836 16.5V7.5C21.1836 5.29086 19.3927 3.5 17.1836 3.5Z"
+                            stroke="white"
+                            stroke-width="1.5"
+                        />
+                        <path
+                            d="M2.73047 7.58984L9.93547 11.7198C10.5392 12.0702 11.2249 12.2547 11.923 12.2547C12.621 12.2547 13.3067 12.0702 13.9105 11.7198L21.1355 7.58984"
+                            stroke="white"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+
+                    Send report pdf
+                </button>
+            </div>
+        </div>
+
+        <div class="main" id="reportContainer">
+            <section class="pdf-page-wrapper">
+                <div class="page-header">
+                    <svg width="76" height="18" viewBox="0 0 76 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M45.2559 4.68177C44.4998 5.43795 43.3902 5.66784 42.3642 5.36575C42.2236 5.32395 42.0868 5.30305 41.9538 5.30305C41.6688 5.30305 41.4466 5.36385 41.2851 5.48354C41.1236 5.60324 41.0438 5.75334 41.0438 5.93383C41.0438 6.07063 41.0951 6.19602 41.1977 6.31002C41.3003 6.42402 41.5511 6.57981 41.9538 6.77931L42.881 7.24289C43.8576 7.72548 44.5283 8.21756 44.895 8.71725C45.2597 9.21883 45.4421 9.80592 45.4421 10.4804C45.4421 11.3772 45.1134 12.1257 44.4542 12.7261C43.7949 13.3265 42.9133 13.6267 41.8056 13.6267C40.3332 13.6267 39.159 13.051 38.2812 11.9016L38.779 11.3601C39.3148 10.7768 40.1736 10.6609 40.8728 11.0371L40.8842 11.0428C41.2832 11.2556 41.6365 11.362 41.9462 11.362C42.2806 11.362 42.5485 11.2822 42.7537 11.1207C42.957 10.9592 43.0596 10.7749 43.0596 10.564C43.0596 10.1745 42.691 9.79452 41.9557 9.42213L41.1027 8.99464C39.4668 8.17386 38.6498 7.14409 38.6498 5.90533C38.6498 5.10736 38.9576 4.42528 39.5732 3.85909C40.1888 3.29481 40.9754 3.01172 41.9348 3.01172C42.5903 3.01172 43.2078 3.15611 43.7854 3.44301C44.363 3.7299 44.8532 4.14408 45.2559 4.68177Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M49.3438 4.38538C49.8016 3.92749 50.2956 3.5836 50.8276 3.35561C51.3596 3.12762 51.9277 3.01172 52.5338 3.01172C53.8504 3.01172 54.9714 3.5095 55.8929 4.50507C56.8143 5.50064 57.276 6.77741 57.276 8.33726C57.276 9.89711 56.7991 11.0979 55.8473 12.1086C54.8954 13.1194 53.7668 13.6248 52.4616 13.6248C51.8802 13.6248 51.3387 13.5203 50.839 13.3132C50.3393 13.1061 49.8396 12.7679 49.3457 12.2967V17.0561C47.9568 17.0561 46.832 15.9313 46.832 14.5425V3.27201H48.2323C48.8479 3.27201 49.3457 3.7698 49.3457 4.38538H49.3438ZM52.0056 5.35055C51.2076 5.35055 50.5464 5.62224 50.0201 6.16753C49.4939 6.71281 49.2317 7.42339 49.2317 8.30116C49.2317 9.17894 49.4939 9.92371 50.0201 10.4766C50.5312 11.0143 51.1696 11.2898 51.9372 11.3069C52.6326 11.3202 53.3184 11.0732 53.8257 10.5982C54.4432 10.0168 54.7529 9.25493 54.7529 8.31256C54.7529 7.44619 54.4926 6.73751 53.9739 6.18272C53.4552 5.62984 52.7979 5.35245 52.0075 5.35245L52.0056 5.35055Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M70.582 3.27201H71.4826C72.1837 3.27201 72.7537 3.84009 72.7537 4.54307C72.9893 4.04149 73.3008 3.6615 73.6903 3.40121C74.0798 3.14091 74.5073 3.01172 74.9709 3.01172C75.2977 3.01172 75.6416 3.09912 76.0007 3.27201L75.5656 4.47468C75.4003 4.92876 74.969 5.23275 74.4845 5.23085H74.4788C74.0893 5.23085 73.7606 5.47215 73.4908 5.95473C73.2211 6.43732 73.0881 7.38349 73.0881 8.79325L73.0976 9.28533V13.3664C71.7087 13.3664 70.5839 12.2416 70.5839 10.8528V3.27201H70.582Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M19.6602 3.27201H20.5607C21.2618 3.27201 21.8318 3.84009 21.8318 4.54307C22.0674 4.04149 22.379 3.6615 22.7685 3.40121C23.1579 3.14091 23.5854 3.01172 24.049 3.01172C24.3758 3.01172 24.7197 3.09912 25.0788 3.27201L24.6437 4.47468C24.4784 4.92876 24.0471 5.23275 23.5626 5.23085H23.5569C23.1674 5.23085 22.8388 5.47215 22.569 5.95473C22.2992 6.43732 22.1662 7.38349 22.1662 8.79325L22.1757 9.28533V13.3664C20.7868 13.3664 19.6621 12.2416 19.6621 10.8528V3.27201H19.6602Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M58.6133 3.01172C60.1807 3.01172 61.5924 3.95599 62.1909 5.40375L63.8229 9.34613L65.6374 5.37335C66.2948 3.93509 67.7292 3.01172 69.3119 3.01172L64.0813 14.419C63.4163 15.8686 61.9686 16.7958 60.3745 16.7958L62.2289 12.823C62.3695 12.5209 62.3771 12.1751 62.2517 11.8674L58.6133 3.01172Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M36.9461 8.95678H28.9214C29.0376 9.6639 29.3487 10.2251 29.851 10.6404C30.3532 11.0557 30.9979 11.2652 31.7775 11.2652C32.3172 11.2652 32.812 11.1567 33.2617 10.9397C33.9664 10.603 34.776 10.5656 35.4806 10.8948L36.099 11.1829C36.1965 11.2278 36.2302 11.355 36.1627 11.4411C35.6642 12.0995 35.0758 12.5897 34.4011 12.9189C33.6703 13.2743 32.8007 13.4539 31.7925 13.4539C30.2295 13.4539 28.9589 12.9638 27.9769 11.9798C26.9949 11.0033 26.5039 9.7724 26.5039 8.29081C26.5039 6.80922 26.9949 5.51471 27.9732 4.51576C28.9514 3.51306 30.1808 3.01172 31.6575 3.01172C33.2242 3.01172 34.4986 3.51306 35.4843 4.51576C36.4663 5.51845 36.9573 6.83916 36.9573 8.48536L36.9498 8.96052L36.9461 8.95678ZM34.4461 6.99255C34.2812 6.43883 33.9551 5.98612 33.4716 5.64191C32.9844 5.29396 32.4221 5.12186 31.7812 5.12186C31.0841 5.12186 30.4731 5.31641 29.9484 5.70552C29.6186 5.94871 29.3112 6.37897 29.0301 6.99255H34.4461Z"
+                            fill="white"
+                        />
+                        <circle cx="8.31079" cy="8.31079" r="8.31079" fill="#308BF9" />
+                        <path
+                            d="M8.31055 0C12.9004 0 16.6219 3.72074 16.6221 8.31055C16.6221 12.9005 12.9005 16.6221 8.31055 16.6221C3.72074 16.6219 0 12.9004 0 8.31055C0.000136577 3.72082 3.72082 0.00013658 8.31055 0ZM6.93164 3.11914C6.3182 2.72036 5.66895 2.84418 5.19336 3.15039C4.75822 3.43069 4.41721 3.88038 4.16992 4.3291C3.68119 5.21619 3.35403 6.48186 3.57422 7.52148C3.6895 8.06565 3.97728 8.63332 4.56543 8.9707C4.75442 9.07911 4.95664 9.15315 5.16895 9.19727C4.8487 10.0617 4.50645 10.8658 4.2334 11.4609C4.04133 11.8796 4.22482 12.3742 4.64355 12.5664C5.06267 12.7584 5.55882 12.5751 5.75098 12.1562C6.11417 11.3646 6.6042 10.2007 7.01562 8.98438C7.85924 8.68167 8.87647 8.10316 10.0996 7.18848C9.86237 7.87163 9.66146 8.56907 9.5293 9.23633C9.34562 10.1638 9.27403 11.1356 9.50684 11.9531C9.62687 12.3744 9.83489 12.7807 10.1729 13.1084C10.5152 13.4403 10.9485 13.6501 11.4463 13.7412C11.8997 13.8241 12.3349 13.5244 12.418 13.0713C12.5011 12.6182 12.2005 12.1837 11.7471 12.1006C11.5363 12.062 11.4152 11.987 11.3359 11.9102C11.2524 11.8291 11.1709 11.702 11.1123 11.4961C10.9878 11.0588 11.001 10.3988 11.167 9.56055C11.4945 7.90669 12.3347 5.95263 13.0215 4.65234C13.2109 4.2933 13.1138 3.85023 12.792 3.60254C12.4701 3.35488 12.0168 3.37456 11.7178 3.64941C9.97471 5.25187 8.63053 6.25683 7.61816 6.84961C7.74419 6.25522 7.8235 5.67112 7.81934 5.14746C7.81387 4.46643 7.66216 3.59419 6.93164 3.11914ZM6.07715 4.62207C6.11626 4.73042 6.14738 4.90511 6.14941 5.16113C6.1535 5.67601 6.03765 6.36063 5.83203 7.13965C5.79372 7.28477 5.75308 7.43166 5.70996 7.5791C5.52806 7.58393 5.43471 7.54537 5.39648 7.52344C5.34338 7.49288 5.25762 7.41463 5.20703 7.17578C5.09549 6.64867 5.26765 5.79653 5.63281 5.13379C5.79302 4.84307 5.94979 4.66527 6.05957 4.58008C6.06499 4.59196 6.07125 4.60574 6.07715 4.62207Z"
+                            fill="white"
+                        />
+                    </svg>
+
+                    <p class="report">Health Report</p>
+                </div>
+                <div class="page-content">
+                    <div class="image-container">
+                        <img src="report_images/1.jpg" srcset="report_images/1.jpg 1x, report_images/2.jpg 2x, report_images/3.jpg 3x, report_images/4.jpg 4x" sizes="100vw" style="width: 100%; height: auto;" alt="Respyr test demo" />
+
+                        <div class="content-wrapper">
+                            <h1 class="title">India’s first breath-based health screening device</h1>
+
+                            <div class="cirtificate-container">
+                                <p>CDSCO Approved Class-B IVD Device</p>
+                                <div class="cirtificates">
+                                    <img src="report_images/cdsco.png" alt="" />
+                                    <img src="report_images/iso.png" alt="" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-user-details-wrapper">
+                        <div class="left-side-wrapper">
+                            <p class="p_id">
+                                Subject ID :
+                                <?php echo $profile_id ?>
+                            </p>
+                            <p class="t_date_time">
+                                Date &amp; Time: <?php echo $dttm_disp; ?>
+                            </p>
+                            <h2 class="p_name"><?php echo $name; ?></h2>
+                            <p class="p_age">
+                                <?php echo $gender; ?>,
+                                <?php echo $age ?>
+                                yrs
+                            </p>
+                            <div class="report-title">
+                                <h1 class="title">
+                                    <span>A Comprehensive</span><br />
+                                    Health Report
+                                </h1>
+                                <p class="sub-title">Breath-based health insights personalized for you</p>
+                            </div>
+                        </div>
+                        <div class="right-side-wrapper">
+                            <div class="client-logo-container">
+                                <img class="report-logo-img" alt="Report Logo" crossorigin="anonymous" />
+                                <h5>Report generated by</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- <div class="page-footer"></div> -->
+            </section>
+
+            <section class="pdf-page-wrapper">
+                <div class="page-header">
+                    <svg width="76" height="18" viewBox="0 0 76 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M45.2559 4.68177C44.4998 5.43795 43.3902 5.66784 42.3642 5.36575C42.2236 5.32395 42.0868 5.30305 41.9538 5.30305C41.6688 5.30305 41.4466 5.36385 41.2851 5.48354C41.1236 5.60324 41.0438 5.75334 41.0438 5.93383C41.0438 6.07063 41.0951 6.19602 41.1977 6.31002C41.3003 6.42402 41.5511 6.57981 41.9538 6.77931L42.881 7.24289C43.8576 7.72548 44.5283 8.21756 44.895 8.71725C45.2597 9.21883 45.4421 9.80592 45.4421 10.4804C45.4421 11.3772 45.1134 12.1257 44.4542 12.7261C43.7949 13.3265 42.9133 13.6267 41.8056 13.6267C40.3332 13.6267 39.159 13.051 38.2812 11.9016L38.779 11.3601C39.3148 10.7768 40.1736 10.6609 40.8728 11.0371L40.8842 11.0428C41.2832 11.2556 41.6365 11.362 41.9462 11.362C42.2806 11.362 42.5485 11.2822 42.7537 11.1207C42.957 10.9592 43.0596 10.7749 43.0596 10.564C43.0596 10.1745 42.691 9.79452 41.9557 9.42213L41.1027 8.99464C39.4668 8.17386 38.6498 7.14409 38.6498 5.90533C38.6498 5.10736 38.9576 4.42528 39.5732 3.85909C40.1888 3.29481 40.9754 3.01172 41.9348 3.01172C42.5903 3.01172 43.2078 3.15611 43.7854 3.44301C44.363 3.7299 44.8532 4.14408 45.2559 4.68177Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M49.3438 4.38538C49.8016 3.92749 50.2956 3.5836 50.8276 3.35561C51.3596 3.12762 51.9277 3.01172 52.5338 3.01172C53.8504 3.01172 54.9714 3.5095 55.8929 4.50507C56.8143 5.50064 57.276 6.77741 57.276 8.33726C57.276 9.89711 56.7991 11.0979 55.8473 12.1086C54.8954 13.1194 53.7668 13.6248 52.4616 13.6248C51.8802 13.6248 51.3387 13.5203 50.839 13.3132C50.3393 13.1061 49.8396 12.7679 49.3457 12.2967V17.0561C47.9568 17.0561 46.832 15.9313 46.832 14.5425V3.27201H48.2323C48.8479 3.27201 49.3457 3.7698 49.3457 4.38538H49.3438ZM52.0056 5.35055C51.2076 5.35055 50.5464 5.62224 50.0201 6.16753C49.4939 6.71281 49.2317 7.42339 49.2317 8.30116C49.2317 9.17894 49.4939 9.92371 50.0201 10.4766C50.5312 11.0143 51.1696 11.2898 51.9372 11.3069C52.6326 11.3202 53.3184 11.0732 53.8257 10.5982C54.4432 10.0168 54.7529 9.25493 54.7529 8.31256C54.7529 7.44619 54.4926 6.73751 53.9739 6.18272C53.4552 5.62984 52.7979 5.35245 52.0075 5.35245L52.0056 5.35055Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M70.582 3.27201H71.4826C72.1837 3.27201 72.7537 3.84009 72.7537 4.54307C72.9893 4.04149 73.3008 3.6615 73.6903 3.40121C74.0798 3.14091 74.5073 3.01172 74.9709 3.01172C75.2977 3.01172 75.6416 3.09912 76.0007 3.27201L75.5656 4.47468C75.4003 4.92876 74.969 5.23275 74.4845 5.23085H74.4788C74.0893 5.23085 73.7606 5.47215 73.4908 5.95473C73.2211 6.43732 73.0881 7.38349 73.0881 8.79325L73.0976 9.28533V13.3664C71.7087 13.3664 70.5839 12.2416 70.5839 10.8528V3.27201H70.582Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M19.6602 3.27201H20.5607C21.2618 3.27201 21.8318 3.84009 21.8318 4.54307C22.0674 4.04149 22.379 3.6615 22.7685 3.40121C23.1579 3.14091 23.5854 3.01172 24.049 3.01172C24.3758 3.01172 24.7197 3.09912 25.0788 3.27201L24.6437 4.47468C24.4784 4.92876 24.0471 5.23275 23.5626 5.23085H23.5569C23.1674 5.23085 22.8388 5.47215 22.569 5.95473C22.2992 6.43732 22.1662 7.38349 22.1662 8.79325L22.1757 9.28533V13.3664C20.7868 13.3664 19.6621 12.2416 19.6621 10.8528V3.27201H19.6602Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M58.6133 3.01172C60.1807 3.01172 61.5924 3.95599 62.1909 5.40375L63.8229 9.34613L65.6374 5.37335C66.2948 3.93509 67.7292 3.01172 69.3119 3.01172L64.0813 14.419C63.4163 15.8686 61.9686 16.7958 60.3745 16.7958L62.2289 12.823C62.3695 12.5209 62.3771 12.1751 62.2517 11.8674L58.6133 3.01172Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M36.9461 8.95678H28.9214C29.0376 9.6639 29.3487 10.2251 29.851 10.6404C30.3532 11.0557 30.9979 11.2652 31.7775 11.2652C32.3172 11.2652 32.812 11.1567 33.2617 10.9397C33.9664 10.603 34.776 10.5656 35.4806 10.8948L36.099 11.1829C36.1965 11.2278 36.2302 11.355 36.1627 11.4411C35.6642 12.0995 35.0758 12.5897 34.4011 12.9189C33.6703 13.2743 32.8007 13.4539 31.7925 13.4539C30.2295 13.4539 28.9589 12.9638 27.9769 11.9798C26.9949 11.0033 26.5039 9.7724 26.5039 8.29081C26.5039 6.80922 26.9949 5.51471 27.9732 4.51576C28.9514 3.51306 30.1808 3.01172 31.6575 3.01172C33.2242 3.01172 34.4986 3.51306 35.4843 4.51576C36.4663 5.51845 36.9573 6.83916 36.9573 8.48536L36.9498 8.96052L36.9461 8.95678ZM34.4461 6.99255C34.2812 6.43883 33.9551 5.98612 33.4716 5.64191C32.9844 5.29396 32.4221 5.12186 31.7812 5.12186C31.0841 5.12186 30.4731 5.31641 29.9484 5.70552C29.6186 5.94871 29.3112 6.37897 29.0301 6.99255H34.4461Z"
+                            fill="white"
+                        />
+                        <circle cx="8.31079" cy="8.31079" r="8.31079" fill="#308BF9" />
+                        <path
+                            d="M8.31055 0C12.9004 0 16.6219 3.72074 16.6221 8.31055C16.6221 12.9005 12.9005 16.6221 8.31055 16.6221C3.72074 16.6219 0 12.9004 0 8.31055C0.000136577 3.72082 3.72082 0.00013658 8.31055 0ZM6.93164 3.11914C6.3182 2.72036 5.66895 2.84418 5.19336 3.15039C4.75822 3.43069 4.41721 3.88038 4.16992 4.3291C3.68119 5.21619 3.35403 6.48186 3.57422 7.52148C3.6895 8.06565 3.97728 8.63332 4.56543 8.9707C4.75442 9.07911 4.95664 9.15315 5.16895 9.19727C4.8487 10.0617 4.50645 10.8658 4.2334 11.4609C4.04133 11.8796 4.22482 12.3742 4.64355 12.5664C5.06267 12.7584 5.55882 12.5751 5.75098 12.1562C6.11417 11.3646 6.6042 10.2007 7.01562 8.98438C7.85924 8.68167 8.87647 8.10316 10.0996 7.18848C9.86237 7.87163 9.66146 8.56907 9.5293 9.23633C9.34562 10.1638 9.27403 11.1356 9.50684 11.9531C9.62687 12.3744 9.83489 12.7807 10.1729 13.1084C10.5152 13.4403 10.9485 13.6501 11.4463 13.7412C11.8997 13.8241 12.3349 13.5244 12.418 13.0713C12.5011 12.6182 12.2005 12.1837 11.7471 12.1006C11.5363 12.062 11.4152 11.987 11.3359 11.9102C11.2524 11.8291 11.1709 11.702 11.1123 11.4961C10.9878 11.0588 11.001 10.3988 11.167 9.56055C11.4945 7.90669 12.3347 5.95263 13.0215 4.65234C13.2109 4.2933 13.1138 3.85023 12.792 3.60254C12.4701 3.35488 12.0168 3.37456 11.7178 3.64941C9.97471 5.25187 8.63053 6.25683 7.61816 6.84961C7.74419 6.25522 7.8235 5.67112 7.81934 5.14746C7.81387 4.46643 7.66216 3.59419 6.93164 3.11914ZM6.07715 4.62207C6.11626 4.73042 6.14738 4.90511 6.14941 5.16113C6.1535 5.67601 6.03765 6.36063 5.83203 7.13965C5.79372 7.28477 5.75308 7.43166 5.70996 7.5791C5.52806 7.58393 5.43471 7.54537 5.39648 7.52344C5.34338 7.49288 5.25762 7.41463 5.20703 7.17578C5.09549 6.64867 5.26765 5.79653 5.63281 5.13379C5.79302 4.84307 5.94979 4.66527 6.05957 4.58008C6.06499 4.59196 6.07125 4.60574 6.07715 4.62207Z"
+                            fill="white"
+                        />
+                    </svg>
+
+                    <p class="report">Health Report</p>
+                </div>
+                <div class="page-content overall-scores-content">
+                    <div class="content-header">
+                        <h4 class="title notranslate">Personalized Health Summary</h4>
+                        <div class="details">
+                            <p class="name"><?php echo $name ?></p>
+                            <p class="p_id_time">
+                                <span>
+                                     Subject Id :
+                                    <?php echo $profile_id?>
+                                </span>
+                                <span>Date &amp; Time: <?php echo $dttm_disp; ?></span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="congratulation-wrapper">
+                        <p class="message"><?php echo $name; ?>, Congratulations!</p>
+                        <p class="message">
+                            We’ve successfully completed your health screening using the Respyr device. This is a meaningful step toward staying in control of your health and uncovering opportunities for improvement. <br />
+                            <br />
+                            Your breath has revealed valuable insights into your body's current state—now let’s use this information to guide smarter lifestyle choices for a healthier tomorrow!
+                        </p>
+                    </div>
+                    <div class="score-reference-wrapper">
+                        <div class="score-reference">
+                            <div class="score">
+                                <div class="circle poor"></div>
+                                <p class="notranslate"><b>Poor</b>0 - 69%</p>
+                            </div>
+
+                            <div class="score">
+                                <div class="circle fair"></div>
+                                <p class="notranslate"><b>Fair</b>70 - 79%</p>
+                            </div>
+
+                            <div class="score">
+                                <div class="circle good"></div>
+                                <p class="notranslate"><b>Good</b>80 - 100%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="result-wrapper">
+                        <img src="report_images/user_anotomy.png" alt="" class="result-image" />
+                        <div class="content-wrapper">
+                            <div class="score-row">
+                                <div class="score-crd">
+                                    <div class="row">
+                                        <img src="report_images/respr.png" alt="" />
+                                        <div class="title">Respiratory Score</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <?php echo getScoreDiv($resp) ?>
+                                        </div>
+                                        <div class="col notranslate">
+                                            <?php echo getScoreStatusDiv($resp); ?>
+                                            <div class="score-message">
+                                                <?php echo getScoreMessage($resp); ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="score-crd">
+                                    <div class="row">
+                                        <img src="report_images/gut_ic.png" alt="" />
+                                        <div class="title">
+                                            Gut<br />
+                                            Score
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <?php echo getScoreDiv($guts) ?>
+                                        </div>
+                                        <div class="col notranslate">
+                                            <?php echo getScoreStatusDiv($guts); ?>
+                                            <div class="score-message">
+                                                <?php echo getScoreMessage($guts); ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="score-row">
+                                <div class="score-crd">
+                                    <div class="row">
+                                        <img src="report_images/liver_ic.png" alt="" />
+                                        <div class="title">Liver Score</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <?php echo getScoreDiv($liver) ?>
+                                        </div>
+                                        <div class="col notranslate">
+                                            <?php echo getScoreStatusDiv($liver); ?>
+                                            <div class="score-message">
+                                                <?php echo getScoreMessage($liver); ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="score-crd">
+                                    <div class="row">
+                                        <img src="report_images/sugar.png" alt="" />
+                                        <div class="title">Sugar Score</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <?php echo getScoreDiv($sugar) ?>
+                                        </div>
+                                        <div class="col notranslate">
+                                            <?php echo getScoreStatusDiv($sugar); ?>
+                                            <div class="score-message">
+                                                <?php echo getScoreMessage($sugar); ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="client-logo-container">
+                    <h5>Report generated by</h5>
+                    <img class="report-logo-img" alt="Report Logo" crossorigin="anonymous" />
+                </div>
+
+                <!-- <div class="page-footer"></div> -->
+            </section>
+
+            <section class="pdf-page-wrapper">
+                <div class="page-header">
+                    <svg width="76" height="18" viewBox="0 0 76 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M45.2559 4.68177C44.4998 5.43795 43.3902 5.66784 42.3642 5.36575C42.2236 5.32395 42.0868 5.30305 41.9538 5.30305C41.6688 5.30305 41.4466 5.36385 41.2851 5.48354C41.1236 5.60324 41.0438 5.75334 41.0438 5.93383C41.0438 6.07063 41.0951 6.19602 41.1977 6.31002C41.3003 6.42402 41.5511 6.57981 41.9538 6.77931L42.881 7.24289C43.8576 7.72548 44.5283 8.21756 44.895 8.71725C45.2597 9.21883 45.4421 9.80592 45.4421 10.4804C45.4421 11.3772 45.1134 12.1257 44.4542 12.7261C43.7949 13.3265 42.9133 13.6267 41.8056 13.6267C40.3332 13.6267 39.159 13.051 38.2812 11.9016L38.779 11.3601C39.3148 10.7768 40.1736 10.6609 40.8728 11.0371L40.8842 11.0428C41.2832 11.2556 41.6365 11.362 41.9462 11.362C42.2806 11.362 42.5485 11.2822 42.7537 11.1207C42.957 10.9592 43.0596 10.7749 43.0596 10.564C43.0596 10.1745 42.691 9.79452 41.9557 9.42213L41.1027 8.99464C39.4668 8.17386 38.6498 7.14409 38.6498 5.90533C38.6498 5.10736 38.9576 4.42528 39.5732 3.85909C40.1888 3.29481 40.9754 3.01172 41.9348 3.01172C42.5903 3.01172 43.2078 3.15611 43.7854 3.44301C44.363 3.7299 44.8532 4.14408 45.2559 4.68177Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M49.3438 4.38538C49.8016 3.92749 50.2956 3.5836 50.8276 3.35561C51.3596 3.12762 51.9277 3.01172 52.5338 3.01172C53.8504 3.01172 54.9714 3.5095 55.8929 4.50507C56.8143 5.50064 57.276 6.77741 57.276 8.33726C57.276 9.89711 56.7991 11.0979 55.8473 12.1086C54.8954 13.1194 53.7668 13.6248 52.4616 13.6248C51.8802 13.6248 51.3387 13.5203 50.839 13.3132C50.3393 13.1061 49.8396 12.7679 49.3457 12.2967V17.0561C47.9568 17.0561 46.832 15.9313 46.832 14.5425V3.27201H48.2323C48.8479 3.27201 49.3457 3.7698 49.3457 4.38538H49.3438ZM52.0056 5.35055C51.2076 5.35055 50.5464 5.62224 50.0201 6.16753C49.4939 6.71281 49.2317 7.42339 49.2317 8.30116C49.2317 9.17894 49.4939 9.92371 50.0201 10.4766C50.5312 11.0143 51.1696 11.2898 51.9372 11.3069C52.6326 11.3202 53.3184 11.0732 53.8257 10.5982C54.4432 10.0168 54.7529 9.25493 54.7529 8.31256C54.7529 7.44619 54.4926 6.73751 53.9739 6.18272C53.4552 5.62984 52.7979 5.35245 52.0075 5.35245L52.0056 5.35055Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M70.582 3.27201H71.4826C72.1837 3.27201 72.7537 3.84009 72.7537 4.54307C72.9893 4.04149 73.3008 3.6615 73.6903 3.40121C74.0798 3.14091 74.5073 3.01172 74.9709 3.01172C75.2977 3.01172 75.6416 3.09912 76.0007 3.27201L75.5656 4.47468C75.4003 4.92876 74.969 5.23275 74.4845 5.23085H74.4788C74.0893 5.23085 73.7606 5.47215 73.4908 5.95473C73.2211 6.43732 73.0881 7.38349 73.0881 8.79325L73.0976 9.28533V13.3664C71.7087 13.3664 70.5839 12.2416 70.5839 10.8528V3.27201H70.582Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M19.6602 3.27201H20.5607C21.2618 3.27201 21.8318 3.84009 21.8318 4.54307C22.0674 4.04149 22.379 3.6615 22.7685 3.40121C23.1579 3.14091 23.5854 3.01172 24.049 3.01172C24.3758 3.01172 24.7197 3.09912 25.0788 3.27201L24.6437 4.47468C24.4784 4.92876 24.0471 5.23275 23.5626 5.23085H23.5569C23.1674 5.23085 22.8388 5.47215 22.569 5.95473C22.2992 6.43732 22.1662 7.38349 22.1662 8.79325L22.1757 9.28533V13.3664C20.7868 13.3664 19.6621 12.2416 19.6621 10.8528V3.27201H19.6602Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M58.6133 3.01172C60.1807 3.01172 61.5924 3.95599 62.1909 5.40375L63.8229 9.34613L65.6374 5.37335C66.2948 3.93509 67.7292 3.01172 69.3119 3.01172L64.0813 14.419C63.4163 15.8686 61.9686 16.7958 60.3745 16.7958L62.2289 12.823C62.3695 12.5209 62.3771 12.1751 62.2517 11.8674L58.6133 3.01172Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M36.9461 8.95678H28.9214C29.0376 9.6639 29.3487 10.2251 29.851 10.6404C30.3532 11.0557 30.9979 11.2652 31.7775 11.2652C32.3172 11.2652 32.812 11.1567 33.2617 10.9397C33.9664 10.603 34.776 10.5656 35.4806 10.8948L36.099 11.1829C36.1965 11.2278 36.2302 11.355 36.1627 11.4411C35.6642 12.0995 35.0758 12.5897 34.4011 12.9189C33.6703 13.2743 32.8007 13.4539 31.7925 13.4539C30.2295 13.4539 28.9589 12.9638 27.9769 11.9798C26.9949 11.0033 26.5039 9.7724 26.5039 8.29081C26.5039 6.80922 26.9949 5.51471 27.9732 4.51576C28.9514 3.51306 30.1808 3.01172 31.6575 3.01172C33.2242 3.01172 34.4986 3.51306 35.4843 4.51576C36.4663 5.51845 36.9573 6.83916 36.9573 8.48536L36.9498 8.96052L36.9461 8.95678ZM34.4461 6.99255C34.2812 6.43883 33.9551 5.98612 33.4716 5.64191C32.9844 5.29396 32.4221 5.12186 31.7812 5.12186C31.0841 5.12186 30.4731 5.31641 29.9484 5.70552C29.6186 5.94871 29.3112 6.37897 29.0301 6.99255H34.4461Z"
+                            fill="white"
+                        />
+                        <circle cx="8.31079" cy="8.31079" r="8.31079" fill="#308BF9" />
+                        <path
+                            d="M8.31055 0C12.9004 0 16.6219 3.72074 16.6221 8.31055C16.6221 12.9005 12.9005 16.6221 8.31055 16.6221C3.72074 16.6219 0 12.9004 0 8.31055C0.000136577 3.72082 3.72082 0.00013658 8.31055 0ZM6.93164 3.11914C6.3182 2.72036 5.66895 2.84418 5.19336 3.15039C4.75822 3.43069 4.41721 3.88038 4.16992 4.3291C3.68119 5.21619 3.35403 6.48186 3.57422 7.52148C3.6895 8.06565 3.97728 8.63332 4.56543 8.9707C4.75442 9.07911 4.95664 9.15315 5.16895 9.19727C4.8487 10.0617 4.50645 10.8658 4.2334 11.4609C4.04133 11.8796 4.22482 12.3742 4.64355 12.5664C5.06267 12.7584 5.55882 12.5751 5.75098 12.1562C6.11417 11.3646 6.6042 10.2007 7.01562 8.98438C7.85924 8.68167 8.87647 8.10316 10.0996 7.18848C9.86237 7.87163 9.66146 8.56907 9.5293 9.23633C9.34562 10.1638 9.27403 11.1356 9.50684 11.9531C9.62687 12.3744 9.83489 12.7807 10.1729 13.1084C10.5152 13.4403 10.9485 13.6501 11.4463 13.7412C11.8997 13.8241 12.3349 13.5244 12.418 13.0713C12.5011 12.6182 12.2005 12.1837 11.7471 12.1006C11.5363 12.062 11.4152 11.987 11.3359 11.9102C11.2524 11.8291 11.1709 11.702 11.1123 11.4961C10.9878 11.0588 11.001 10.3988 11.167 9.56055C11.4945 7.90669 12.3347 5.95263 13.0215 4.65234C13.2109 4.2933 13.1138 3.85023 12.792 3.60254C12.4701 3.35488 12.0168 3.37456 11.7178 3.64941C9.97471 5.25187 8.63053 6.25683 7.61816 6.84961C7.74419 6.25522 7.8235 5.67112 7.81934 5.14746C7.81387 4.46643 7.66216 3.59419 6.93164 3.11914ZM6.07715 4.62207C6.11626 4.73042 6.14738 4.90511 6.14941 5.16113C6.1535 5.67601 6.03765 6.36063 5.83203 7.13965C5.79372 7.28477 5.75308 7.43166 5.70996 7.5791C5.52806 7.58393 5.43471 7.54537 5.39648 7.52344C5.34338 7.49288 5.25762 7.41463 5.20703 7.17578C5.09549 6.64867 5.26765 5.79653 5.63281 5.13379C5.79302 4.84307 5.94979 4.66527 6.05957 4.58008C6.06499 4.59196 6.07125 4.60574 6.07715 4.62207Z"
+                            fill="white"
+                        />
+                    </svg>
+
+                    <p class="report">Health Report</p>
+                </div>
+
+                <!-- /////// quick summary section ////// -->
+                <div class="page-content overall-scores-content">
+                    <div class="content-header">
+                        <h4 class="title notranslate">Quick Summary</h4>
+                        <div class="details">
+                            <p class="name"><?php echo $name ?></p>
+                            <p class="p_id_time">
+                                <span>
+                                    Subject ID :
+                                    <?php echo $profile_id?>
+                                </span>
+                                <span>Date &amp; Time: <?php echo $dttm_disp; ?></span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+
+                    <div class="quick-summary-wrapper">
+                        <div class="quick-summary-header">
+                            <ul class="quick-summary-list">
+                                <li><p>Quick Summary gives you a simple, easy-to-understand breakdown of each health score generated by the Respyr device.</p></li>
+
+                                <li class="quick-summary-list-item-b">
+                                    <p>It quickly lets you know:</p>
+                                    <ul class="quick-summary-details-b">
+                                        <li>What each score indicates</li>
+                                        <li>Which biomarker was measured</li>
+                                        <li>The value detected</li>
+                                        <li>Its unit of measurement</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <table class="quick-summary-table">
+                            <tr class="quick-smmary-table-header">
+                                <th>Score & Percentage</th>
+                                <th>Main Marker</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                                <th>Quick Interpretation</th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="quick-smmary-table-score">
+                                        <p class="score-name">Sugar Score</p>
+                                        <div class="score-wrapper">
+                                            <p class="score-value"><?php echo $sugar ."%"; ?></p>
+                                            <div class="line"></div>
+                                            <?php echo getScoreStatusDiv($sugar); ?>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Acetone</td>
+                                <td><?php echo $acetone_ppm; ?></td>
+                                <td>ppm</td>
+                                <td><?php echo getQuickScoreInterpretation($sugar, 'sugar'); ?></td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <div class="quick-smmary-table-score">
+                                        <p class="score-name">Liver Score</p>
+                                        <div class="score-wrapper">
+                                            <p class="score-value"><?php echo $liver ."%"; ?></p>
+                                            <div class="line"></div>
+                                            <?php echo getScoreStatusDiv($liver); ?>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Ethanol</td>
+                                <td><?php echo $ethanol_ppm; ?></td>
+                                <td>ppm</td>
+                                <td><?php echo getQuickScoreInterpretation($liver, 'liver'); ?></td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <div class="quick-smmary-table-score">
+                                        <p class="score-name">Gut Score</p>
+                                        <div class="score-wrapper">
+                                            <p class="score-value"><?php echo $guts ."%"; ?></p>
+                                            <div class="line"></div>
+                                            <?php echo getScoreStatusDiv($guts); ?>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Hydrogen(H2)</td>
+                                <td><?php echo $h2_ppm; ?></td>
+                                <td>ppm</td>
+                                <td><?php echo getQuickScoreInterpretation($guts, 'gut'); ?></td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <div class="quick-smmary-table-score">
+                                        <p class="score-name">Respiratory Score</p>
+                                        <div class="score-wrapper">
+                                            <p class="score-value"><?php echo $resp ."%"; ?></p>
+                                            <div class="line"></div>
+                                            <?php echo getScoreStatusDiv($resp); ?>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Peak Pressure</td>
+                                <td id="maxPressureResult"></td>
+                                <td>-</td>
+                                <td><?php echo getQuickScoreInterpretation($resp, 'respiratory'); ?></td>
+                            </tr>
+
+                            <tr>
+                                <td></td>
+                                <td>FEV1</td>
+                                <td><?php echo $measured_fev1; ?></td>
+                                <td>seconds</td>
+                                <td></td>
+                            </tr>
+
+                            <tr>
+                                <td></td>
+                                <td>FVC</td>
+                                <td><?php echo $measured_fvc; ?></td>
+                                <td>seconds</td>
+                                <td></td>
+                            </tr>
+
+                            <tr>
+                                <td></td>
+                                <td>Ratio</td>
+                                <td><?php echo $measured_ratio; ?></td>
+                                <td>seconds</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td>PEF(L/min)</td>
+                                <td><?php echo $measured_pef; ?></td>
+                                <td>seconds</td>
+                                <td></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="client-logo-container">
+                    <h5>Report generated by</h5>
+                    <img class="report-logo-img" alt="Report Logo" crossorigin="anonymous" />
+                </div>
+
+                <!-- <div class="page-footer"></div> -->
+            </section>
+            <section class="pdf-page-wrapper">
+                <div class="page-header">
+                    <svg width="76" height="18" viewBox="0 0 76 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M45.2559 4.68177C44.4998 5.43795 43.3902 5.66784 42.3642 5.36575C42.2236 5.32395 42.0868 5.30305 41.9538 5.30305C41.6688 5.30305 41.4466 5.36385 41.2851 5.48354C41.1236 5.60324 41.0438 5.75334 41.0438 5.93383C41.0438 6.07063 41.0951 6.19602 41.1977 6.31002C41.3003 6.42402 41.5511 6.57981 41.9538 6.77931L42.881 7.24289C43.8576 7.72548 44.5283 8.21756 44.895 8.71725C45.2597 9.21883 45.4421 9.80592 45.4421 10.4804C45.4421 11.3772 45.1134 12.1257 44.4542 12.7261C43.7949 13.3265 42.9133 13.6267 41.8056 13.6267C40.3332 13.6267 39.159 13.051 38.2812 11.9016L38.779 11.3601C39.3148 10.7768 40.1736 10.6609 40.8728 11.0371L40.8842 11.0428C41.2832 11.2556 41.6365 11.362 41.9462 11.362C42.2806 11.362 42.5485 11.2822 42.7537 11.1207C42.957 10.9592 43.0596 10.7749 43.0596 10.564C43.0596 10.1745 42.691 9.79452 41.9557 9.42213L41.1027 8.99464C39.4668 8.17386 38.6498 7.14409 38.6498 5.90533C38.6498 5.10736 38.9576 4.42528 39.5732 3.85909C40.1888 3.29481 40.9754 3.01172 41.9348 3.01172C42.5903 3.01172 43.2078 3.15611 43.7854 3.44301C44.363 3.7299 44.8532 4.14408 45.2559 4.68177Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M49.3438 4.38538C49.8016 3.92749 50.2956 3.5836 50.8276 3.35561C51.3596 3.12762 51.9277 3.01172 52.5338 3.01172C53.8504 3.01172 54.9714 3.5095 55.8929 4.50507C56.8143 5.50064 57.276 6.77741 57.276 8.33726C57.276 9.89711 56.7991 11.0979 55.8473 12.1086C54.8954 13.1194 53.7668 13.6248 52.4616 13.6248C51.8802 13.6248 51.3387 13.5203 50.839 13.3132C50.3393 13.1061 49.8396 12.7679 49.3457 12.2967V17.0561C47.9568 17.0561 46.832 15.9313 46.832 14.5425V3.27201H48.2323C48.8479 3.27201 49.3457 3.7698 49.3457 4.38538H49.3438ZM52.0056 5.35055C51.2076 5.35055 50.5464 5.62224 50.0201 6.16753C49.4939 6.71281 49.2317 7.42339 49.2317 8.30116C49.2317 9.17894 49.4939 9.92371 50.0201 10.4766C50.5312 11.0143 51.1696 11.2898 51.9372 11.3069C52.6326 11.3202 53.3184 11.0732 53.8257 10.5982C54.4432 10.0168 54.7529 9.25493 54.7529 8.31256C54.7529 7.44619 54.4926 6.73751 53.9739 6.18272C53.4552 5.62984 52.7979 5.35245 52.0075 5.35245L52.0056 5.35055Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M70.582 3.27201H71.4826C72.1837 3.27201 72.7537 3.84009 72.7537 4.54307C72.9893 4.04149 73.3008 3.6615 73.6903 3.40121C74.0798 3.14091 74.5073 3.01172 74.9709 3.01172C75.2977 3.01172 75.6416 3.09912 76.0007 3.27201L75.5656 4.47468C75.4003 4.92876 74.969 5.23275 74.4845 5.23085H74.4788C74.0893 5.23085 73.7606 5.47215 73.4908 5.95473C73.2211 6.43732 73.0881 7.38349 73.0881 8.79325L73.0976 9.28533V13.3664C71.7087 13.3664 70.5839 12.2416 70.5839 10.8528V3.27201H70.582Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M19.6602 3.27201H20.5607C21.2618 3.27201 21.8318 3.84009 21.8318 4.54307C22.0674 4.04149 22.379 3.6615 22.7685 3.40121C23.1579 3.14091 23.5854 3.01172 24.049 3.01172C24.3758 3.01172 24.7197 3.09912 25.0788 3.27201L24.6437 4.47468C24.4784 4.92876 24.0471 5.23275 23.5626 5.23085H23.5569C23.1674 5.23085 22.8388 5.47215 22.569 5.95473C22.2992 6.43732 22.1662 7.38349 22.1662 8.79325L22.1757 9.28533V13.3664C20.7868 13.3664 19.6621 12.2416 19.6621 10.8528V3.27201H19.6602Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M58.6133 3.01172C60.1807 3.01172 61.5924 3.95599 62.1909 5.40375L63.8229 9.34613L65.6374 5.37335C66.2948 3.93509 67.7292 3.01172 69.3119 3.01172L64.0813 14.419C63.4163 15.8686 61.9686 16.7958 60.3745 16.7958L62.2289 12.823C62.3695 12.5209 62.3771 12.1751 62.2517 11.8674L58.6133 3.01172Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M36.9461 8.95678H28.9214C29.0376 9.6639 29.3487 10.2251 29.851 10.6404C30.3532 11.0557 30.9979 11.2652 31.7775 11.2652C32.3172 11.2652 32.812 11.1567 33.2617 10.9397C33.9664 10.603 34.776 10.5656 35.4806 10.8948L36.099 11.1829C36.1965 11.2278 36.2302 11.355 36.1627 11.4411C35.6642 12.0995 35.0758 12.5897 34.4011 12.9189C33.6703 13.2743 32.8007 13.4539 31.7925 13.4539C30.2295 13.4539 28.9589 12.9638 27.9769 11.9798C26.9949 11.0033 26.5039 9.7724 26.5039 8.29081C26.5039 6.80922 26.9949 5.51471 27.9732 4.51576C28.9514 3.51306 30.1808 3.01172 31.6575 3.01172C33.2242 3.01172 34.4986 3.51306 35.4843 4.51576C36.4663 5.51845 36.9573 6.83916 36.9573 8.48536L36.9498 8.96052L36.9461 8.95678ZM34.4461 6.99255C34.2812 6.43883 33.9551 5.98612 33.4716 5.64191C32.9844 5.29396 32.4221 5.12186 31.7812 5.12186C31.0841 5.12186 30.4731 5.31641 29.9484 5.70552C29.6186 5.94871 29.3112 6.37897 29.0301 6.99255H34.4461Z"
+                            fill="white"
+                        />
+                        <circle cx="8.31079" cy="8.31079" r="8.31079" fill="#308BF9" />
+                        <path
+                            d="M8.31055 0C12.9004 0 16.6219 3.72074 16.6221 8.31055C16.6221 12.9005 12.9005 16.6221 8.31055 16.6221C3.72074 16.6219 0 12.9004 0 8.31055C0.000136577 3.72082 3.72082 0.00013658 8.31055 0ZM6.93164 3.11914C6.3182 2.72036 5.66895 2.84418 5.19336 3.15039C4.75822 3.43069 4.41721 3.88038 4.16992 4.3291C3.68119 5.21619 3.35403 6.48186 3.57422 7.52148C3.6895 8.06565 3.97728 8.63332 4.56543 8.9707C4.75442 9.07911 4.95664 9.15315 5.16895 9.19727C4.8487 10.0617 4.50645 10.8658 4.2334 11.4609C4.04133 11.8796 4.22482 12.3742 4.64355 12.5664C5.06267 12.7584 5.55882 12.5751 5.75098 12.1562C6.11417 11.3646 6.6042 10.2007 7.01562 8.98438C7.85924 8.68167 8.87647 8.10316 10.0996 7.18848C9.86237 7.87163 9.66146 8.56907 9.5293 9.23633C9.34562 10.1638 9.27403 11.1356 9.50684 11.9531C9.62687 12.3744 9.83489 12.7807 10.1729 13.1084C10.5152 13.4403 10.9485 13.6501 11.4463 13.7412C11.8997 13.8241 12.3349 13.5244 12.418 13.0713C12.5011 12.6182 12.2005 12.1837 11.7471 12.1006C11.5363 12.062 11.4152 11.987 11.3359 11.9102C11.2524 11.8291 11.1709 11.702 11.1123 11.4961C10.9878 11.0588 11.001 10.3988 11.167 9.56055C11.4945 7.90669 12.3347 5.95263 13.0215 4.65234C13.2109 4.2933 13.1138 3.85023 12.792 3.60254C12.4701 3.35488 12.0168 3.37456 11.7178 3.64941C9.97471 5.25187 8.63053 6.25683 7.61816 6.84961C7.74419 6.25522 7.8235 5.67112 7.81934 5.14746C7.81387 4.46643 7.66216 3.59419 6.93164 3.11914ZM6.07715 4.62207C6.11626 4.73042 6.14738 4.90511 6.14941 5.16113C6.1535 5.67601 6.03765 6.36063 5.83203 7.13965C5.79372 7.28477 5.75308 7.43166 5.70996 7.5791C5.52806 7.58393 5.43471 7.54537 5.39648 7.52344C5.34338 7.49288 5.25762 7.41463 5.20703 7.17578C5.09549 6.64867 5.26765 5.79653 5.63281 5.13379C5.79302 4.84307 5.94979 4.66527 6.05957 4.58008C6.06499 4.59196 6.07125 4.60574 6.07715 4.62207Z"
+                            fill="white"
+                        />
+                    </svg>
+
+                    <p class="report">Health Report</p>
+                </div>
+                <div class="page-content single-score-wrapper sugar-scpre">
+                    <svg class="water_mark" width="370" height="420" viewBox="0 0 370 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            opacity="0.05"
+                            fill-rule="evenodd"
+                            clip-rule="evenodd"
+                            d="M65.0049 10.9302C83.3097 -0.888159 108.294 -5.66958 131.909 9.71685C160.035 28.0433 165.878 61.6979 166.087 87.9727C166.247 108.178 163.177 130.701 158.325 153.636C197.289 130.771 249.02 91.9962 316.114 30.1719C327.623 19.5669 345.084 18.8019 357.474 28.3599C369.863 37.9179 373.582 55.0223 366.283 68.8747C339.852 119.033 307.522 194.392 294.917 258.189C288.527 290.528 288.031 315.988 292.824 332.859C295.082 340.804 298.196 345.719 301.412 348.845C304.461 351.809 309.129 354.672 317.241 356.161C334.695 359.364 346.252 376.133 343.054 393.614C339.855 411.096 323.113 422.671 305.659 419.467C286.497 415.95 269.838 407.841 256.661 395.033C243.651 382.387 235.638 366.732 231.019 350.475C222.059 318.941 224.811 281.471 231.88 245.694C236.967 219.949 244.722 193.044 253.855 166.684C206.776 201.973 167.633 224.3 135.163 235.978C119.328 282.895 100.453 327.781 86.4752 358.318C79.0801 374.474 60.009 381.566 43.8786 374.16C27.7482 366.753 20.6668 347.652 28.0618 331.496C38.5706 308.538 51.7604 277.538 64.0859 244.192C55.9125 242.49 48.1306 239.623 40.8549 235.439C18.2171 222.424 7.12636 200.528 2.6904 179.535C-5.7851 139.426 6.82943 90.5967 25.6441 56.377C35.161 39.0678 48.2579 21.7428 65.0049 10.9302ZM84.8977 181.752C86.5584 176.06 88.1346 170.4 89.6099 164.797C97.5236 134.746 101.987 108.346 101.83 88.4846C101.751 78.6087 100.526 71.8835 99.0203 67.7038C98.7922 67.0704 98.5695 66.5289 98.3601 66.0688C94.1348 69.3536 88.1009 76.205 81.9329 87.4232C67.8742 112.993 61.2604 145.874 65.5573 166.209C67.5075 175.438 70.8031 178.447 72.8463 179.622C74.3176 180.468 77.897 181.938 84.8977 181.752Z"
+                            fill="#308BF9"
+                        />
+                    </svg>
+
+                    <div class="subject-details-table">
+                        <table>
+                            <tr>
+                                <th>Name</th>
+                                <td><?php echo $name  ?></td>
+                            </tr>
+                            <tr>
+                                <th>Gender</th>
+                                <td><?php echo $gender  ?></td>
+                            </tr>
+
+                            <tr>
+                                <th>Height</th>
+                                <td>
+                                    <?php echo $height  ?>
+                                    cm
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Weight</th>
+                                <td>
+                                    <?php echo $weight  ?>
+                                    kg
+                                </td>
+                            </tr>
+                        </table>
+                        <table>
+                            <tr>
+                                <th style="text-align: start;">BMI</th>
+                                <td style="text-align: start;"><?php echo calculateBMI($weight, $height)  ?></td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: start;">BMR</th>
+                                <td style="text-align: start;"><?php echo calculateBMR($weight, $height,$age, $gender)  ?></td>
+                            </tr>
+
+                            <tr>
+                                <th style="text-align: start;">Subject id</th>
+                                <td style="text-align: start;"><?php echo $profile_id; ?></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="divider"></div>
+                    <div class="scre-in-details-wrapper">
+                        <h4 class="title">Score Name: Sugar Score</h4>
+
+                        <ul>
+                            <li>
+                                <?php echo getClinicalInsight("sugarScore"); ?>
+                            </li>
+                        </ul>
+
+                        <table>
+                            <tr>
+                                <th>Score percentage</th>
+                                <th>Score range</th>
+                                <th>Glucose Metabolism</th>
+                                <th>Respyr Score Meaning</th>
+                                <th>Clinical Considerations / Suggested Next Steps</th>
+                            </tr>
+                            <tr>
+                                <td><?php echo $sugar  ?></td>
+                                <td class="notranslate">
+                                    <?php echo getScoreCategorySpan($sugar); ?>
+                                </td>
+                                <td><?php echo getSugarScoreGlucoseMetabolism($sugar); ?></td>
+                                <td><?php echo getRespyrScoreMeaningSugarScore($sugar); ?></td>
+                                <td><?php echo getClinicalSuggestionSugarScore($sugar); ?></td>
+                            </tr>
+                        </table>
+
+                        <table style="table-layout: auto; width: 100%;">
+                            <tr>
+                                <th>Main Marker</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <ul>
+                                        <li>Acetone</li>
+                                        <li>
+                                            Acetone (ppm), measured in exhaled breath. Acetone reflects fat metabolism and is indirectly associated with glucose utilization efficiency.
+                                        </li>
+                                    </ul>
+                                </td>
+                                <td class="notranslate">
+                                    <?php echo $acetone_ppm; ?>
+                                </td>
+                                <td>ppm</td>
+                            </tr>
+                        </table>
+
+                        <ul>
+                            <li>
+                                Correlation: <br />
+                                <?php echo getClinicalCorrelation("sugarScore"); ?>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="client-logo-container">
+                    <h5>Report generated by</h5>
+                    <img class="report-logo-img" alt="Report Logo" crossorigin="anonymous" />
+                </div>
+
+                <!-- <div class="page-footer"></div> -->
+            </section>
+            <section class="pdf-page-wrapper">
+                <div class="page-header">
+                    <svg width="76" height="18" viewBox="0 0 76 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M45.2559 4.68177C44.4998 5.43795 43.3902 5.66784 42.3642 5.36575C42.2236 5.32395 42.0868 5.30305 41.9538 5.30305C41.6688 5.30305 41.4466 5.36385 41.2851 5.48354C41.1236 5.60324 41.0438 5.75334 41.0438 5.93383C41.0438 6.07063 41.0951 6.19602 41.1977 6.31002C41.3003 6.42402 41.5511 6.57981 41.9538 6.77931L42.881 7.24289C43.8576 7.72548 44.5283 8.21756 44.895 8.71725C45.2597 9.21883 45.4421 9.80592 45.4421 10.4804C45.4421 11.3772 45.1134 12.1257 44.4542 12.7261C43.7949 13.3265 42.9133 13.6267 41.8056 13.6267C40.3332 13.6267 39.159 13.051 38.2812 11.9016L38.779 11.3601C39.3148 10.7768 40.1736 10.6609 40.8728 11.0371L40.8842 11.0428C41.2832 11.2556 41.6365 11.362 41.9462 11.362C42.2806 11.362 42.5485 11.2822 42.7537 11.1207C42.957 10.9592 43.0596 10.7749 43.0596 10.564C43.0596 10.1745 42.691 9.79452 41.9557 9.42213L41.1027 8.99464C39.4668 8.17386 38.6498 7.14409 38.6498 5.90533C38.6498 5.10736 38.9576 4.42528 39.5732 3.85909C40.1888 3.29481 40.9754 3.01172 41.9348 3.01172C42.5903 3.01172 43.2078 3.15611 43.7854 3.44301C44.363 3.7299 44.8532 4.14408 45.2559 4.68177Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M49.3438 4.38538C49.8016 3.92749 50.2956 3.5836 50.8276 3.35561C51.3596 3.12762 51.9277 3.01172 52.5338 3.01172C53.8504 3.01172 54.9714 3.5095 55.8929 4.50507C56.8143 5.50064 57.276 6.77741 57.276 8.33726C57.276 9.89711 56.7991 11.0979 55.8473 12.1086C54.8954 13.1194 53.7668 13.6248 52.4616 13.6248C51.8802 13.6248 51.3387 13.5203 50.839 13.3132C50.3393 13.1061 49.8396 12.7679 49.3457 12.2967V17.0561C47.9568 17.0561 46.832 15.9313 46.832 14.5425V3.27201H48.2323C48.8479 3.27201 49.3457 3.7698 49.3457 4.38538H49.3438ZM52.0056 5.35055C51.2076 5.35055 50.5464 5.62224 50.0201 6.16753C49.4939 6.71281 49.2317 7.42339 49.2317 8.30116C49.2317 9.17894 49.4939 9.92371 50.0201 10.4766C50.5312 11.0143 51.1696 11.2898 51.9372 11.3069C52.6326 11.3202 53.3184 11.0732 53.8257 10.5982C54.4432 10.0168 54.7529 9.25493 54.7529 8.31256C54.7529 7.44619 54.4926 6.73751 53.9739 6.18272C53.4552 5.62984 52.7979 5.35245 52.0075 5.35245L52.0056 5.35055Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M70.582 3.27201H71.4826C72.1837 3.27201 72.7537 3.84009 72.7537 4.54307C72.9893 4.04149 73.3008 3.6615 73.6903 3.40121C74.0798 3.14091 74.5073 3.01172 74.9709 3.01172C75.2977 3.01172 75.6416 3.09912 76.0007 3.27201L75.5656 4.47468C75.4003 4.92876 74.969 5.23275 74.4845 5.23085H74.4788C74.0893 5.23085 73.7606 5.47215 73.4908 5.95473C73.2211 6.43732 73.0881 7.38349 73.0881 8.79325L73.0976 9.28533V13.3664C71.7087 13.3664 70.5839 12.2416 70.5839 10.8528V3.27201H70.582Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M19.6602 3.27201H20.5607C21.2618 3.27201 21.8318 3.84009 21.8318 4.54307C22.0674 4.04149 22.379 3.6615 22.7685 3.40121C23.1579 3.14091 23.5854 3.01172 24.049 3.01172C24.3758 3.01172 24.7197 3.09912 25.0788 3.27201L24.6437 4.47468C24.4784 4.92876 24.0471 5.23275 23.5626 5.23085H23.5569C23.1674 5.23085 22.8388 5.47215 22.569 5.95473C22.2992 6.43732 22.1662 7.38349 22.1662 8.79325L22.1757 9.28533V13.3664C20.7868 13.3664 19.6621 12.2416 19.6621 10.8528V3.27201H19.6602Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M58.6133 3.01172C60.1807 3.01172 61.5924 3.95599 62.1909 5.40375L63.8229 9.34613L65.6374 5.37335C66.2948 3.93509 67.7292 3.01172 69.3119 3.01172L64.0813 14.419C63.4163 15.8686 61.9686 16.7958 60.3745 16.7958L62.2289 12.823C62.3695 12.5209 62.3771 12.1751 62.2517 11.8674L58.6133 3.01172Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M36.9461 8.95678H28.9214C29.0376 9.6639 29.3487 10.2251 29.851 10.6404C30.3532 11.0557 30.9979 11.2652 31.7775 11.2652C32.3172 11.2652 32.812 11.1567 33.2617 10.9397C33.9664 10.603 34.776 10.5656 35.4806 10.8948L36.099 11.1829C36.1965 11.2278 36.2302 11.355 36.1627 11.4411C35.6642 12.0995 35.0758 12.5897 34.4011 12.9189C33.6703 13.2743 32.8007 13.4539 31.7925 13.4539C30.2295 13.4539 28.9589 12.9638 27.9769 11.9798C26.9949 11.0033 26.5039 9.7724 26.5039 8.29081C26.5039 6.80922 26.9949 5.51471 27.9732 4.51576C28.9514 3.51306 30.1808 3.01172 31.6575 3.01172C33.2242 3.01172 34.4986 3.51306 35.4843 4.51576C36.4663 5.51845 36.9573 6.83916 36.9573 8.48536L36.9498 8.96052L36.9461 8.95678ZM34.4461 6.99255C34.2812 6.43883 33.9551 5.98612 33.4716 5.64191C32.9844 5.29396 32.4221 5.12186 31.7812 5.12186C31.0841 5.12186 30.4731 5.31641 29.9484 5.70552C29.6186 5.94871 29.3112 6.37897 29.0301 6.99255H34.4461Z"
+                            fill="white"
+                        />
+                        <circle cx="8.31079" cy="8.31079" r="8.31079" fill="#308BF9" />
+                        <path
+                            d="M8.31055 0C12.9004 0 16.6219 3.72074 16.6221 8.31055C16.6221 12.9005 12.9005 16.6221 8.31055 16.6221C3.72074 16.6219 0 12.9004 0 8.31055C0.000136577 3.72082 3.72082 0.00013658 8.31055 0ZM6.93164 3.11914C6.3182 2.72036 5.66895 2.84418 5.19336 3.15039C4.75822 3.43069 4.41721 3.88038 4.16992 4.3291C3.68119 5.21619 3.35403 6.48186 3.57422 7.52148C3.6895 8.06565 3.97728 8.63332 4.56543 8.9707C4.75442 9.07911 4.95664 9.15315 5.16895 9.19727C4.8487 10.0617 4.50645 10.8658 4.2334 11.4609C4.04133 11.8796 4.22482 12.3742 4.64355 12.5664C5.06267 12.7584 5.55882 12.5751 5.75098 12.1562C6.11417 11.3646 6.6042 10.2007 7.01562 8.98438C7.85924 8.68167 8.87647 8.10316 10.0996 7.18848C9.86237 7.87163 9.66146 8.56907 9.5293 9.23633C9.34562 10.1638 9.27403 11.1356 9.50684 11.9531C9.62687 12.3744 9.83489 12.7807 10.1729 13.1084C10.5152 13.4403 10.9485 13.6501 11.4463 13.7412C11.8997 13.8241 12.3349 13.5244 12.418 13.0713C12.5011 12.6182 12.2005 12.1837 11.7471 12.1006C11.5363 12.062 11.4152 11.987 11.3359 11.9102C11.2524 11.8291 11.1709 11.702 11.1123 11.4961C10.9878 11.0588 11.001 10.3988 11.167 9.56055C11.4945 7.90669 12.3347 5.95263 13.0215 4.65234C13.2109 4.2933 13.1138 3.85023 12.792 3.60254C12.4701 3.35488 12.0168 3.37456 11.7178 3.64941C9.97471 5.25187 8.63053 6.25683 7.61816 6.84961C7.74419 6.25522 7.8235 5.67112 7.81934 5.14746C7.81387 4.46643 7.66216 3.59419 6.93164 3.11914ZM6.07715 4.62207C6.11626 4.73042 6.14738 4.90511 6.14941 5.16113C6.1535 5.67601 6.03765 6.36063 5.83203 7.13965C5.79372 7.28477 5.75308 7.43166 5.70996 7.5791C5.52806 7.58393 5.43471 7.54537 5.39648 7.52344C5.34338 7.49288 5.25762 7.41463 5.20703 7.17578C5.09549 6.64867 5.26765 5.79653 5.63281 5.13379C5.79302 4.84307 5.94979 4.66527 6.05957 4.58008C6.06499 4.59196 6.07125 4.60574 6.07715 4.62207Z"
+                            fill="white"
+                        />
+                    </svg>
+
+                    <p class="report">Health Report</p>
+                </div>
+                <div class="page-content single-score-wrapper sugar-scpre">
+                    <svg class="water_mark" width="370" height="420" viewBox="0 0 370 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            opacity="0.05"
+                            fill-rule="evenodd"
+                            clip-rule="evenodd"
+                            d="M65.0049 10.9302C83.3097 -0.888159 108.294 -5.66958 131.909 9.71685C160.035 28.0433 165.878 61.6979 166.087 87.9727C166.247 108.178 163.177 130.701 158.325 153.636C197.289 130.771 249.02 91.9962 316.114 30.1719C327.623 19.5669 345.084 18.8019 357.474 28.3599C369.863 37.9179 373.582 55.0223 366.283 68.8747C339.852 119.033 307.522 194.392 294.917 258.189C288.527 290.528 288.031 315.988 292.824 332.859C295.082 340.804 298.196 345.719 301.412 348.845C304.461 351.809 309.129 354.672 317.241 356.161C334.695 359.364 346.252 376.133 343.054 393.614C339.855 411.096 323.113 422.671 305.659 419.467C286.497 415.95 269.838 407.841 256.661 395.033C243.651 382.387 235.638 366.732 231.019 350.475C222.059 318.941 224.811 281.471 231.88 245.694C236.967 219.949 244.722 193.044 253.855 166.684C206.776 201.973 167.633 224.3 135.163 235.978C119.328 282.895 100.453 327.781 86.4752 358.318C79.0801 374.474 60.009 381.566 43.8786 374.16C27.7482 366.753 20.6668 347.652 28.0618 331.496C38.5706 308.538 51.7604 277.538 64.0859 244.192C55.9125 242.49 48.1306 239.623 40.8549 235.439C18.2171 222.424 7.12636 200.528 2.6904 179.535C-5.7851 139.426 6.82943 90.5967 25.6441 56.377C35.161 39.0678 48.2579 21.7428 65.0049 10.9302ZM84.8977 181.752C86.5584 176.06 88.1346 170.4 89.6099 164.797C97.5236 134.746 101.987 108.346 101.83 88.4846C101.751 78.6087 100.526 71.8835 99.0203 67.7038C98.7922 67.0704 98.5695 66.5289 98.3601 66.0688C94.1348 69.3536 88.1009 76.205 81.9329 87.4232C67.8742 112.993 61.2604 145.874 65.5573 166.209C67.5075 175.438 70.8031 178.447 72.8463 179.622C74.3176 180.468 77.897 181.938 84.8977 181.752Z"
+                            fill="#308BF9"
+                        />
+                    </svg>
+
+                    <div class="subject-details-table">
+                        <table>
+                            <tr>
+                                <th>Name</th>
+                                <td><?php echo $name  ?></td>
+                            </tr>
+                            <tr>
+                                <th>Gender</th>
+                                <td><?php echo $gender  ?></td>
+                            </tr>
+
+                            <tr>
+                                <th>Height</th>
+                                <td>
+                                    <?php echo $height  ?>
+                                    cm
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Weight</th>
+                                <td>
+                                    <?php echo $weight  ?>
+                                    kg
+                                </td>
+                            </tr>
+                        </table>
+                        <table>
+                            <tr>
+                                <th style="text-align: start;">BMI</th>
+                                <td style="text-align: start;"><?php echo calculateBMI($weight, $height)  ?></td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: start;">BMR</th>
+                                <td style="text-align: start;"><?php echo calculateBMR($weight, $height,$age, $gender)  ?></td>
+                            </tr>
+
+                            <tr>
+                                <th style="text-align: start;">Subject id</th>
+                                <td style="text-align: start;"><?php echo $profile_id; ?></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="divider"></div>
+                    <div class="scre-in-details-wrapper">
+                        <h4 class="title">Score Name: Liver Score</h4>
+
+                        <ul>
+                            <li>
+                                <?php echo getClinicalInsight("liverScore"); ?>
+                            </li>
+                        </ul>
+                        <table>
+                            <tr>
+                                <th>Score percentage</th>
+                                <th>Score range</th>
+                                <th>Hepatic Stress</th>
+                                <th>Respyr Score Meaning</th>
+                                <th>Clinical Considerations / Suggested Next Steps</th>
+                            </tr>
+                            <tr>
+                                <td><?php echo $liver  ?></td>
+                                <td class="notranslate">
+                                    <?php echo getScoreCategorySpan($liver); ?>
+                                </td>
+                                <td><?php echo getLiverScoreHepaticStress($liver); ?></td>
+                                <td><?php echo getRespyrScoreMeaningLiverScore($liver); ?></td>
+                                <td><?php echo getClinicalSuggestionLiverScore($liver); ?></td>
+                            </tr>
+                        </table>
+
+                        <table style="table-layout: auto; width: 100%;">
+                            <tr>
+                                <th>Main Marker</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <ul>
+                                        <li>Ethanol</li>
+                                        <li>
+                                           Ethanol concentration in exhaled breath (ppm), reflecting microbial fermentation and hepatic metabolic processing via the gut-liver axis.
+                                        </li>
+                                    </ul>
+                                </td>
+                                <td class="notranslate">
+                                    <?php echo $ethanol_ppm; ?>
+                                </td>
+                                <td>ppm</td>
+                            </tr>
+                        </table>
+
+                        <ul>
+                            <li>
+                                Correlation: <br />
+                                <?php echo getClinicalCorrelation("liverScore"); ?>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="client-logo-container">
+                    <h5>Report generated by</h5>
+                    <img class="report-logo-img" alt="Report Logo" crossorigin="anonymous" />
+                </div>
+
+                <!-- <div class="page-footer"></div> -->
+            </section>
+            <section class="pdf-page-wrapper">
+                <div class="page-header">
+                    <svg width="76" height="18" viewBox="0 0 76 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M45.2559 4.68177C44.4998 5.43795 43.3902 5.66784 42.3642 5.36575C42.2236 5.32395 42.0868 5.30305 41.9538 5.30305C41.6688 5.30305 41.4466 5.36385 41.2851 5.48354C41.1236 5.60324 41.0438 5.75334 41.0438 5.93383C41.0438 6.07063 41.0951 6.19602 41.1977 6.31002C41.3003 6.42402 41.5511 6.57981 41.9538 6.77931L42.881 7.24289C43.8576 7.72548 44.5283 8.21756 44.895 8.71725C45.2597 9.21883 45.4421 9.80592 45.4421 10.4804C45.4421 11.3772 45.1134 12.1257 44.4542 12.7261C43.7949 13.3265 42.9133 13.6267 41.8056 13.6267C40.3332 13.6267 39.159 13.051 38.2812 11.9016L38.779 11.3601C39.3148 10.7768 40.1736 10.6609 40.8728 11.0371L40.8842 11.0428C41.2832 11.2556 41.6365 11.362 41.9462 11.362C42.2806 11.362 42.5485 11.2822 42.7537 11.1207C42.957 10.9592 43.0596 10.7749 43.0596 10.564C43.0596 10.1745 42.691 9.79452 41.9557 9.42213L41.1027 8.99464C39.4668 8.17386 38.6498 7.14409 38.6498 5.90533C38.6498 5.10736 38.9576 4.42528 39.5732 3.85909C40.1888 3.29481 40.9754 3.01172 41.9348 3.01172C42.5903 3.01172 43.2078 3.15611 43.7854 3.44301C44.363 3.7299 44.8532 4.14408 45.2559 4.68177Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M49.3438 4.38538C49.8016 3.92749 50.2956 3.5836 50.8276 3.35561C51.3596 3.12762 51.9277 3.01172 52.5338 3.01172C53.8504 3.01172 54.9714 3.5095 55.8929 4.50507C56.8143 5.50064 57.276 6.77741 57.276 8.33726C57.276 9.89711 56.7991 11.0979 55.8473 12.1086C54.8954 13.1194 53.7668 13.6248 52.4616 13.6248C51.8802 13.6248 51.3387 13.5203 50.839 13.3132C50.3393 13.1061 49.8396 12.7679 49.3457 12.2967V17.0561C47.9568 17.0561 46.832 15.9313 46.832 14.5425V3.27201H48.2323C48.8479 3.27201 49.3457 3.7698 49.3457 4.38538H49.3438ZM52.0056 5.35055C51.2076 5.35055 50.5464 5.62224 50.0201 6.16753C49.4939 6.71281 49.2317 7.42339 49.2317 8.30116C49.2317 9.17894 49.4939 9.92371 50.0201 10.4766C50.5312 11.0143 51.1696 11.2898 51.9372 11.3069C52.6326 11.3202 53.3184 11.0732 53.8257 10.5982C54.4432 10.0168 54.7529 9.25493 54.7529 8.31256C54.7529 7.44619 54.4926 6.73751 53.9739 6.18272C53.4552 5.62984 52.7979 5.35245 52.0075 5.35245L52.0056 5.35055Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M70.582 3.27201H71.4826C72.1837 3.27201 72.7537 3.84009 72.7537 4.54307C72.9893 4.04149 73.3008 3.6615 73.6903 3.40121C74.0798 3.14091 74.5073 3.01172 74.9709 3.01172C75.2977 3.01172 75.6416 3.09912 76.0007 3.27201L75.5656 4.47468C75.4003 4.92876 74.969 5.23275 74.4845 5.23085H74.4788C74.0893 5.23085 73.7606 5.47215 73.4908 5.95473C73.2211 6.43732 73.0881 7.38349 73.0881 8.79325L73.0976 9.28533V13.3664C71.7087 13.3664 70.5839 12.2416 70.5839 10.8528V3.27201H70.582Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M19.6602 3.27201H20.5607C21.2618 3.27201 21.8318 3.84009 21.8318 4.54307C22.0674 4.04149 22.379 3.6615 22.7685 3.40121C23.1579 3.14091 23.5854 3.01172 24.049 3.01172C24.3758 3.01172 24.7197 3.09912 25.0788 3.27201L24.6437 4.47468C24.4784 4.92876 24.0471 5.23275 23.5626 5.23085H23.5569C23.1674 5.23085 22.8388 5.47215 22.569 5.95473C22.2992 6.43732 22.1662 7.38349 22.1662 8.79325L22.1757 9.28533V13.3664C20.7868 13.3664 19.6621 12.2416 19.6621 10.8528V3.27201H19.6602Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M58.6133 3.01172C60.1807 3.01172 61.5924 3.95599 62.1909 5.40375L63.8229 9.34613L65.6374 5.37335C66.2948 3.93509 67.7292 3.01172 69.3119 3.01172L64.0813 14.419C63.4163 15.8686 61.9686 16.7958 60.3745 16.7958L62.2289 12.823C62.3695 12.5209 62.3771 12.1751 62.2517 11.8674L58.6133 3.01172Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M36.9461 8.95678H28.9214C29.0376 9.6639 29.3487 10.2251 29.851 10.6404C30.3532 11.0557 30.9979 11.2652 31.7775 11.2652C32.3172 11.2652 32.812 11.1567 33.2617 10.9397C33.9664 10.603 34.776 10.5656 35.4806 10.8948L36.099 11.1829C36.1965 11.2278 36.2302 11.355 36.1627 11.4411C35.6642 12.0995 35.0758 12.5897 34.4011 12.9189C33.6703 13.2743 32.8007 13.4539 31.7925 13.4539C30.2295 13.4539 28.9589 12.9638 27.9769 11.9798C26.9949 11.0033 26.5039 9.7724 26.5039 8.29081C26.5039 6.80922 26.9949 5.51471 27.9732 4.51576C28.9514 3.51306 30.1808 3.01172 31.6575 3.01172C33.2242 3.01172 34.4986 3.51306 35.4843 4.51576C36.4663 5.51845 36.9573 6.83916 36.9573 8.48536L36.9498 8.96052L36.9461 8.95678ZM34.4461 6.99255C34.2812 6.43883 33.9551 5.98612 33.4716 5.64191C32.9844 5.29396 32.4221 5.12186 31.7812 5.12186C31.0841 5.12186 30.4731 5.31641 29.9484 5.70552C29.6186 5.94871 29.3112 6.37897 29.0301 6.99255H34.4461Z"
+                            fill="white"
+                        />
+                        <circle cx="8.31079" cy="8.31079" r="8.31079" fill="#308BF9" />
+                        <path
+                            d="M8.31055 0C12.9004 0 16.6219 3.72074 16.6221 8.31055C16.6221 12.9005 12.9005 16.6221 8.31055 16.6221C3.72074 16.6219 0 12.9004 0 8.31055C0.000136577 3.72082 3.72082 0.00013658 8.31055 0ZM6.93164 3.11914C6.3182 2.72036 5.66895 2.84418 5.19336 3.15039C4.75822 3.43069 4.41721 3.88038 4.16992 4.3291C3.68119 5.21619 3.35403 6.48186 3.57422 7.52148C3.6895 8.06565 3.97728 8.63332 4.56543 8.9707C4.75442 9.07911 4.95664 9.15315 5.16895 9.19727C4.8487 10.0617 4.50645 10.8658 4.2334 11.4609C4.04133 11.8796 4.22482 12.3742 4.64355 12.5664C5.06267 12.7584 5.55882 12.5751 5.75098 12.1562C6.11417 11.3646 6.6042 10.2007 7.01562 8.98438C7.85924 8.68167 8.87647 8.10316 10.0996 7.18848C9.86237 7.87163 9.66146 8.56907 9.5293 9.23633C9.34562 10.1638 9.27403 11.1356 9.50684 11.9531C9.62687 12.3744 9.83489 12.7807 10.1729 13.1084C10.5152 13.4403 10.9485 13.6501 11.4463 13.7412C11.8997 13.8241 12.3349 13.5244 12.418 13.0713C12.5011 12.6182 12.2005 12.1837 11.7471 12.1006C11.5363 12.062 11.4152 11.987 11.3359 11.9102C11.2524 11.8291 11.1709 11.702 11.1123 11.4961C10.9878 11.0588 11.001 10.3988 11.167 9.56055C11.4945 7.90669 12.3347 5.95263 13.0215 4.65234C13.2109 4.2933 13.1138 3.85023 12.792 3.60254C12.4701 3.35488 12.0168 3.37456 11.7178 3.64941C9.97471 5.25187 8.63053 6.25683 7.61816 6.84961C7.74419 6.25522 7.8235 5.67112 7.81934 5.14746C7.81387 4.46643 7.66216 3.59419 6.93164 3.11914ZM6.07715 4.62207C6.11626 4.73042 6.14738 4.90511 6.14941 5.16113C6.1535 5.67601 6.03765 6.36063 5.83203 7.13965C5.79372 7.28477 5.75308 7.43166 5.70996 7.5791C5.52806 7.58393 5.43471 7.54537 5.39648 7.52344C5.34338 7.49288 5.25762 7.41463 5.20703 7.17578C5.09549 6.64867 5.26765 5.79653 5.63281 5.13379C5.79302 4.84307 5.94979 4.66527 6.05957 4.58008C6.06499 4.59196 6.07125 4.60574 6.07715 4.62207Z"
+                            fill="white"
+                        />
+                    </svg>
+
+                    <p class="report">Health Report</p>
+                </div>
+                <div class="page-content single-score-wrapper sugar-scpre">
+                    <svg class="water_mark" width="370" height="420" viewBox="0 0 370 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            opacity="0.05"
+                            fill-rule="evenodd"
+                            clip-rule="evenodd"
+                            d="M65.0049 10.9302C83.3097 -0.888159 108.294 -5.66958 131.909 9.71685C160.035 28.0433 165.878 61.6979 166.087 87.9727C166.247 108.178 163.177 130.701 158.325 153.636C197.289 130.771 249.02 91.9962 316.114 30.1719C327.623 19.5669 345.084 18.8019 357.474 28.3599C369.863 37.9179 373.582 55.0223 366.283 68.8747C339.852 119.033 307.522 194.392 294.917 258.189C288.527 290.528 288.031 315.988 292.824 332.859C295.082 340.804 298.196 345.719 301.412 348.845C304.461 351.809 309.129 354.672 317.241 356.161C334.695 359.364 346.252 376.133 343.054 393.614C339.855 411.096 323.113 422.671 305.659 419.467C286.497 415.95 269.838 407.841 256.661 395.033C243.651 382.387 235.638 366.732 231.019 350.475C222.059 318.941 224.811 281.471 231.88 245.694C236.967 219.949 244.722 193.044 253.855 166.684C206.776 201.973 167.633 224.3 135.163 235.978C119.328 282.895 100.453 327.781 86.4752 358.318C79.0801 374.474 60.009 381.566 43.8786 374.16C27.7482 366.753 20.6668 347.652 28.0618 331.496C38.5706 308.538 51.7604 277.538 64.0859 244.192C55.9125 242.49 48.1306 239.623 40.8549 235.439C18.2171 222.424 7.12636 200.528 2.6904 179.535C-5.7851 139.426 6.82943 90.5967 25.6441 56.377C35.161 39.0678 48.2579 21.7428 65.0049 10.9302ZM84.8977 181.752C86.5584 176.06 88.1346 170.4 89.6099 164.797C97.5236 134.746 101.987 108.346 101.83 88.4846C101.751 78.6087 100.526 71.8835 99.0203 67.7038C98.7922 67.0704 98.5695 66.5289 98.3601 66.0688C94.1348 69.3536 88.1009 76.205 81.9329 87.4232C67.8742 112.993 61.2604 145.874 65.5573 166.209C67.5075 175.438 70.8031 178.447 72.8463 179.622C74.3176 180.468 77.897 181.938 84.8977 181.752Z"
+                            fill="#308BF9"
+                        />
+                    </svg>
+
+                    <div class="subject-details-table">
+                        <table>
+                            <tr>
+                                <th>Name</th>
+                                <td><?php echo $name  ?></td>
+                            </tr>
+                            <tr>
+                                <th>Gender</th>
+                                <td><?php echo $gender  ?></td>
+                            </tr>
+
+                            <tr>
+                                <th>Height</th>
+                                <td>
+                                    <?php echo $height  ?>
+                                    cm
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Weight</th>
+                                <td>
+                                    <?php echo $weight  ?>
+                                    kg
+                                </td>
+                            </tr>
+                        </table>
+                        <table>
+                            <tr>
+                                <th style="text-align: start;">BMI</th>
+                                <td style="text-align: start;"><?php echo calculateBMI($weight, $height)  ?></td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: start;">BMR</th>
+                                <td style="text-align: start;"><?php echo calculateBMR($weight, $height,$age, $gender)  ?></td>
+                            </tr>
+
+                            <tr>
+                                <th style="text-align: start;">Subject id</th>
+                                <td style="text-align: start;"><?php echo $profile_id; ?></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="divider"></div>
+                    <div class="scre-in-details-wrapper">
+                        <h4 class="title">Score Name: Respiratory score</h4>
+                        <ul>
+                            <li>
+                                <?php echo getClinicalInsight("respiratoryScore"); ?>
+                            </li>
+                        </ul>
+                        <table>
+                            <tr>
+                                <th>Score percentage</th>
+                                <th>Score range</th>
+                                <th>Airflow / Ventilation</th>
+                                <th>Respyr Score Meaning</th>
+                                <th>Clinical Considerations / Suggested Next Steps</th>
+                            </tr>
+                            <tr>
+                                <td><?php echo $resp  ?></td>
+                                <td class="notranslate">
+                                    <?php echo getScoreCategorySpan($resp); ?>
+                                </td>
+                                <td><?php echo getRespiratoryScoreAirflowVentilation($resp); ?></td>
+                                <td><?php echo getRespyrScoreMeaningRespiratoryScore($resp); ?></td>
+                                <td><?php echo getClinicalSuggestionRespiratoryScore($resp); ?></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="client-logo-container">
+                    <h5>Report generated by</h5>
+                    <img class="report-logo-img" alt="Report Logo" crossorigin="anonymous" />
+                </div>
+                <!-- <div class="page-footer"></div> -->
+            </section>
+
+            <section class="pdf-page-wrapper">
+                <div class="page-header">
+                    <svg width="76" height="18" viewBox="0 0 76 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M45.2559 4.68177C44.4998 5.43795 43.3902 5.66784 42.3642 5.36575C42.2236 5.32395 42.0868 5.30305 41.9538 5.30305C41.6688 5.30305 41.4466 5.36385 41.2851 5.48354C41.1236 5.60324 41.0438 5.75334 41.0438 5.93383C41.0438 6.07063 41.0951 6.19602 41.1977 6.31002C41.3003 6.42402 41.5511 6.57981 41.9538 6.77931L42.881 7.24289C43.8576 7.72548 44.5283 8.21756 44.895 8.71725C45.2597 9.21883 45.4421 9.80592 45.4421 10.4804C45.4421 11.3772 45.1134 12.1257 44.4542 12.7261C43.7949 13.3265 42.9133 13.6267 41.8056 13.6267C40.3332 13.6267 39.159 13.051 38.2812 11.9016L38.779 11.3601C39.3148 10.7768 40.1736 10.6609 40.8728 11.0371L40.8842 11.0428C41.2832 11.2556 41.6365 11.362 41.9462 11.362C42.2806 11.362 42.5485 11.2822 42.7537 11.1207C42.957 10.9592 43.0596 10.7749 43.0596 10.564C43.0596 10.1745 42.691 9.79452 41.9557 9.42213L41.1027 8.99464C39.4668 8.17386 38.6498 7.14409 38.6498 5.90533C38.6498 5.10736 38.9576 4.42528 39.5732 3.85909C40.1888 3.29481 40.9754 3.01172 41.9348 3.01172C42.5903 3.01172 43.2078 3.15611 43.7854 3.44301C44.363 3.7299 44.8532 4.14408 45.2559 4.68177Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M49.3438 4.38538C49.8016 3.92749 50.2956 3.5836 50.8276 3.35561C51.3596 3.12762 51.9277 3.01172 52.5338 3.01172C53.8504 3.01172 54.9714 3.5095 55.8929 4.50507C56.8143 5.50064 57.276 6.77741 57.276 8.33726C57.276 9.89711 56.7991 11.0979 55.8473 12.1086C54.8954 13.1194 53.7668 13.6248 52.4616 13.6248C51.8802 13.6248 51.3387 13.5203 50.839 13.3132C50.3393 13.1061 49.8396 12.7679 49.3457 12.2967V17.0561C47.9568 17.0561 46.832 15.9313 46.832 14.5425V3.27201H48.2323C48.8479 3.27201 49.3457 3.7698 49.3457 4.38538H49.3438ZM52.0056 5.35055C51.2076 5.35055 50.5464 5.62224 50.0201 6.16753C49.4939 6.71281 49.2317 7.42339 49.2317 8.30116C49.2317 9.17894 49.4939 9.92371 50.0201 10.4766C50.5312 11.0143 51.1696 11.2898 51.9372 11.3069C52.6326 11.3202 53.3184 11.0732 53.8257 10.5982C54.4432 10.0168 54.7529 9.25493 54.7529 8.31256C54.7529 7.44619 54.4926 6.73751 53.9739 6.18272C53.4552 5.62984 52.7979 5.35245 52.0075 5.35245L52.0056 5.35055Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M70.582 3.27201H71.4826C72.1837 3.27201 72.7537 3.84009 72.7537 4.54307C72.9893 4.04149 73.3008 3.6615 73.6903 3.40121C74.0798 3.14091 74.5073 3.01172 74.9709 3.01172C75.2977 3.01172 75.6416 3.09912 76.0007 3.27201L75.5656 4.47468C75.4003 4.92876 74.969 5.23275 74.4845 5.23085H74.4788C74.0893 5.23085 73.7606 5.47215 73.4908 5.95473C73.2211 6.43732 73.0881 7.38349 73.0881 8.79325L73.0976 9.28533V13.3664C71.7087 13.3664 70.5839 12.2416 70.5839 10.8528V3.27201H70.582Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M19.6602 3.27201H20.5607C21.2618 3.27201 21.8318 3.84009 21.8318 4.54307C22.0674 4.04149 22.379 3.6615 22.7685 3.40121C23.1579 3.14091 23.5854 3.01172 24.049 3.01172C24.3758 3.01172 24.7197 3.09912 25.0788 3.27201L24.6437 4.47468C24.4784 4.92876 24.0471 5.23275 23.5626 5.23085H23.5569C23.1674 5.23085 22.8388 5.47215 22.569 5.95473C22.2992 6.43732 22.1662 7.38349 22.1662 8.79325L22.1757 9.28533V13.3664C20.7868 13.3664 19.6621 12.2416 19.6621 10.8528V3.27201H19.6602Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M58.6133 3.01172C60.1807 3.01172 61.5924 3.95599 62.1909 5.40375L63.8229 9.34613L65.6374 5.37335C66.2948 3.93509 67.7292 3.01172 69.3119 3.01172L64.0813 14.419C63.4163 15.8686 61.9686 16.7958 60.3745 16.7958L62.2289 12.823C62.3695 12.5209 62.3771 12.1751 62.2517 11.8674L58.6133 3.01172Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M36.9461 8.95678H28.9214C29.0376 9.6639 29.3487 10.2251 29.851 10.6404C30.3532 11.0557 30.9979 11.2652 31.7775 11.2652C32.3172 11.2652 32.812 11.1567 33.2617 10.9397C33.9664 10.603 34.776 10.5656 35.4806 10.8948L36.099 11.1829C36.1965 11.2278 36.2302 11.355 36.1627 11.4411C35.6642 12.0995 35.0758 12.5897 34.4011 12.9189C33.6703 13.2743 32.8007 13.4539 31.7925 13.4539C30.2295 13.4539 28.9589 12.9638 27.9769 11.9798C26.9949 11.0033 26.5039 9.7724 26.5039 8.29081C26.5039 6.80922 26.9949 5.51471 27.9732 4.51576C28.9514 3.51306 30.1808 3.01172 31.6575 3.01172C33.2242 3.01172 34.4986 3.51306 35.4843 4.51576C36.4663 5.51845 36.9573 6.83916 36.9573 8.48536L36.9498 8.96052L36.9461 8.95678ZM34.4461 6.99255C34.2812 6.43883 33.9551 5.98612 33.4716 5.64191C32.9844 5.29396 32.4221 5.12186 31.7812 5.12186C31.0841 5.12186 30.4731 5.31641 29.9484 5.70552C29.6186 5.94871 29.3112 6.37897 29.0301 6.99255H34.4461Z"
+                            fill="white"
+                        />
+                        <circle cx="8.31079" cy="8.31079" r="8.31079" fill="#308BF9" />
+                        <path
+                            d="M8.31055 0C12.9004 0 16.6219 3.72074 16.6221 8.31055C16.6221 12.9005 12.9005 16.6221 8.31055 16.6221C3.72074 16.6219 0 12.9004 0 8.31055C0.000136577 3.72082 3.72082 0.00013658 8.31055 0ZM6.93164 3.11914C6.3182 2.72036 5.66895 2.84418 5.19336 3.15039C4.75822 3.43069 4.41721 3.88038 4.16992 4.3291C3.68119 5.21619 3.35403 6.48186 3.57422 7.52148C3.6895 8.06565 3.97728 8.63332 4.56543 8.9707C4.75442 9.07911 4.95664 9.15315 5.16895 9.19727C4.8487 10.0617 4.50645 10.8658 4.2334 11.4609C4.04133 11.8796 4.22482 12.3742 4.64355 12.5664C5.06267 12.7584 5.55882 12.5751 5.75098 12.1562C6.11417 11.3646 6.6042 10.2007 7.01562 8.98438C7.85924 8.68167 8.87647 8.10316 10.0996 7.18848C9.86237 7.87163 9.66146 8.56907 9.5293 9.23633C9.34562 10.1638 9.27403 11.1356 9.50684 11.9531C9.62687 12.3744 9.83489 12.7807 10.1729 13.1084C10.5152 13.4403 10.9485 13.6501 11.4463 13.7412C11.8997 13.8241 12.3349 13.5244 12.418 13.0713C12.5011 12.6182 12.2005 12.1837 11.7471 12.1006C11.5363 12.062 11.4152 11.987 11.3359 11.9102C11.2524 11.8291 11.1709 11.702 11.1123 11.4961C10.9878 11.0588 11.001 10.3988 11.167 9.56055C11.4945 7.90669 12.3347 5.95263 13.0215 4.65234C13.2109 4.2933 13.1138 3.85023 12.792 3.60254C12.4701 3.35488 12.0168 3.37456 11.7178 3.64941C9.97471 5.25187 8.63053 6.25683 7.61816 6.84961C7.74419 6.25522 7.8235 5.67112 7.81934 5.14746C7.81387 4.46643 7.66216 3.59419 6.93164 3.11914ZM6.07715 4.62207C6.11626 4.73042 6.14738 4.90511 6.14941 5.16113C6.1535 5.67601 6.03765 6.36063 5.83203 7.13965C5.79372 7.28477 5.75308 7.43166 5.70996 7.5791C5.52806 7.58393 5.43471 7.54537 5.39648 7.52344C5.34338 7.49288 5.25762 7.41463 5.20703 7.17578C5.09549 6.64867 5.26765 5.79653 5.63281 5.13379C5.79302 4.84307 5.94979 4.66527 6.05957 4.58008C6.06499 4.59196 6.07125 4.60574 6.07715 4.62207Z"
+                            fill="white"
+                        />
+                    </svg>
+
+                    <p class="report">Health Report</p>
+                </div>
+                <div class="page-content single-score-wrapper sugar-scpre">
+                    <svg class="water_mark" width="370" height="420" viewBox="0 0 370 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            opacity="0.05"
+                            fill-rule="evenodd"
+                            clip-rule="evenodd"
+                            d="M65.0049 10.9302C83.3097 -0.888159 108.294 -5.66958 131.909 9.71685C160.035 28.0433 165.878 61.6979 166.087 87.9727C166.247 108.178 163.177 130.701 158.325 153.636C197.289 130.771 249.02 91.9962 316.114 30.1719C327.623 19.5669 345.084 18.8019 357.474 28.3599C369.863 37.9179 373.582 55.0223 366.283 68.8747C339.852 119.033 307.522 194.392 294.917 258.189C288.527 290.528 288.031 315.988 292.824 332.859C295.082 340.804 298.196 345.719 301.412 348.845C304.461 351.809 309.129 354.672 317.241 356.161C334.695 359.364 346.252 376.133 343.054 393.614C339.855 411.096 323.113 422.671 305.659 419.467C286.497 415.95 269.838 407.841 256.661 395.033C243.651 382.387 235.638 366.732 231.019 350.475C222.059 318.941 224.811 281.471 231.88 245.694C236.967 219.949 244.722 193.044 253.855 166.684C206.776 201.973 167.633 224.3 135.163 235.978C119.328 282.895 100.453 327.781 86.4752 358.318C79.0801 374.474 60.009 381.566 43.8786 374.16C27.7482 366.753 20.6668 347.652 28.0618 331.496C38.5706 308.538 51.7604 277.538 64.0859 244.192C55.9125 242.49 48.1306 239.623 40.8549 235.439C18.2171 222.424 7.12636 200.528 2.6904 179.535C-5.7851 139.426 6.82943 90.5967 25.6441 56.377C35.161 39.0678 48.2579 21.7428 65.0049 10.9302ZM84.8977 181.752C86.5584 176.06 88.1346 170.4 89.6099 164.797C97.5236 134.746 101.987 108.346 101.83 88.4846C101.751 78.6087 100.526 71.8835 99.0203 67.7038C98.7922 67.0704 98.5695 66.5289 98.3601 66.0688C94.1348 69.3536 88.1009 76.205 81.9329 87.4232C67.8742 112.993 61.2604 145.874 65.5573 166.209C67.5075 175.438 70.8031 178.447 72.8463 179.622C74.3176 180.468 77.897 181.938 84.8977 181.752Z"
+                            fill="#308BF9"
+                        />
+                    </svg>
+
+                    <div class="subject-details-table">
+                        <table>
+                            <tr>
+                                <th>Name</th>
+                                <td><?php echo $name  ?></td>
+                            </tr>
+                            <tr>
+                                <th>Gender</th>
+                                <td><?php echo $gender  ?></td>
+                            </tr>
+
+                            <tr>
+                                <th>Height</th>
+                                <td>
+                                    <?php echo $height  ?>
+                                    cm
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Weight</th>
+                                <td>
+                                    <?php echo $weight  ?>
+                                    kg
+                                </td>
+                            </tr>
+                        </table>
+                        <table>
+                            <tr>
+                                <th style="text-align: start;">BMI</th>
+                                <td style="text-align: start;"><?php echo calculateBMI($weight, $height)  ?></td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: start;">BMR</th>
+                                <td style="text-align: start;"><?php echo calculateBMR($weight, $height,$age, $gender)  ?></td>
+                            </tr>
+
+                            <tr>
+                                <th style="text-align: start;">Subject id</th>
+                                <td style="text-align: start;"><?php echo $profile_id; ?></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="divider"></div>
+                    <div class="scre-in-details-wrapper">
+                        <h4 class="title">Score Name: Respiratory score</h4>
+
+                        <div class="respiratory-score-wrapper">
+                            <div class="lungs-chart-container">
+                                <canvas id="lungPerformanceChart" style="height: 400px; width: 100%;"></canvas>
+                            </div>
+
+                            <div class="respiratory-data-wrapper">
+                                <table class="respiratory-score-table">
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Actual</th>
+                                        <th>Pre</th>
+                                        <th>Pre%</th>
+                                    </tr>
+                                    <tr>
+                                        <td>FEV1(L)</td>
+                                        <td><?php   echo  $measured_fev1 ?></td>
+                                        <td><?php echo $predicted_fev1 ?></td>
+                                        <td><?php echo $fev1_vs_predicted ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>FVC(L)</td>
+                                        <td><?php   echo  $measured_fvc ?></td>
+                                        <td><?php echo $predicted_fvc ?></td>
+                                        <td><?php echo $fvc_vs_predicted ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>RATIO(%)</td>
+                                        <td><?php   echo  $measured_ratio ?></td>
+                                        <td><?php echo $predicted_ratio ?></td>
+                                        <td><?php echo $ratio_vs_predicted ?></td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>PEF (Lt/min)(%)</td>
+                                        <td><?php   echo  $measured_pef ?></td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                    </tr>
+                                </table>
+                                <p>Peak Expiratory Pressure, converted to FEV1. Additional indicators such as FVC, PEF, and FEV1/FVC ratio are also provided, though Respyr Score is solely based on FEV1.</p>
+                            </div>
+                        </div>
+
+                        <ul>
+                            <li>
+                                Correlation: <br />
+                                <?php echo getClinicalCorrelation("respiratoryScore"); ?>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="client-logo-container">
+                    <h5>Report generated by</h5>
+                    <img class="report-logo-img" alt="Report Logo" crossorigin="anonymous" />
+                </div>
+
+                <!-- <div class="page-footer"></div> -->
+            </section>
+
+            <section class="pdf-page-wrapper">
+                <div class="page-header">
+                    <svg width="76" height="18" viewBox="0 0 76 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M45.2559 4.68177C44.4998 5.43795 43.3902 5.66784 42.3642 5.36575C42.2236 5.32395 42.0868 5.30305 41.9538 5.30305C41.6688 5.30305 41.4466 5.36385 41.2851 5.48354C41.1236 5.60324 41.0438 5.75334 41.0438 5.93383C41.0438 6.07063 41.0951 6.19602 41.1977 6.31002C41.3003 6.42402 41.5511 6.57981 41.9538 6.77931L42.881 7.24289C43.8576 7.72548 44.5283 8.21756 44.895 8.71725C45.2597 9.21883 45.4421 9.80592 45.4421 10.4804C45.4421 11.3772 45.1134 12.1257 44.4542 12.7261C43.7949 13.3265 42.9133 13.6267 41.8056 13.6267C40.3332 13.6267 39.159 13.051 38.2812 11.9016L38.779 11.3601C39.3148 10.7768 40.1736 10.6609 40.8728 11.0371L40.8842 11.0428C41.2832 11.2556 41.6365 11.362 41.9462 11.362C42.2806 11.362 42.5485 11.2822 42.7537 11.1207C42.957 10.9592 43.0596 10.7749 43.0596 10.564C43.0596 10.1745 42.691 9.79452 41.9557 9.42213L41.1027 8.99464C39.4668 8.17386 38.6498 7.14409 38.6498 5.90533C38.6498 5.10736 38.9576 4.42528 39.5732 3.85909C40.1888 3.29481 40.9754 3.01172 41.9348 3.01172C42.5903 3.01172 43.2078 3.15611 43.7854 3.44301C44.363 3.7299 44.8532 4.14408 45.2559 4.68177Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M49.3438 4.38538C49.8016 3.92749 50.2956 3.5836 50.8276 3.35561C51.3596 3.12762 51.9277 3.01172 52.5338 3.01172C53.8504 3.01172 54.9714 3.5095 55.8929 4.50507C56.8143 5.50064 57.276 6.77741 57.276 8.33726C57.276 9.89711 56.7991 11.0979 55.8473 12.1086C54.8954 13.1194 53.7668 13.6248 52.4616 13.6248C51.8802 13.6248 51.3387 13.5203 50.839 13.3132C50.3393 13.1061 49.8396 12.7679 49.3457 12.2967V17.0561C47.9568 17.0561 46.832 15.9313 46.832 14.5425V3.27201H48.2323C48.8479 3.27201 49.3457 3.7698 49.3457 4.38538H49.3438ZM52.0056 5.35055C51.2076 5.35055 50.5464 5.62224 50.0201 6.16753C49.4939 6.71281 49.2317 7.42339 49.2317 8.30116C49.2317 9.17894 49.4939 9.92371 50.0201 10.4766C50.5312 11.0143 51.1696 11.2898 51.9372 11.3069C52.6326 11.3202 53.3184 11.0732 53.8257 10.5982C54.4432 10.0168 54.7529 9.25493 54.7529 8.31256C54.7529 7.44619 54.4926 6.73751 53.9739 6.18272C53.4552 5.62984 52.7979 5.35245 52.0075 5.35245L52.0056 5.35055Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M70.582 3.27201H71.4826C72.1837 3.27201 72.7537 3.84009 72.7537 4.54307C72.9893 4.04149 73.3008 3.6615 73.6903 3.40121C74.0798 3.14091 74.5073 3.01172 74.9709 3.01172C75.2977 3.01172 75.6416 3.09912 76.0007 3.27201L75.5656 4.47468C75.4003 4.92876 74.969 5.23275 74.4845 5.23085H74.4788C74.0893 5.23085 73.7606 5.47215 73.4908 5.95473C73.2211 6.43732 73.0881 7.38349 73.0881 8.79325L73.0976 9.28533V13.3664C71.7087 13.3664 70.5839 12.2416 70.5839 10.8528V3.27201H70.582Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M19.6602 3.27201H20.5607C21.2618 3.27201 21.8318 3.84009 21.8318 4.54307C22.0674 4.04149 22.379 3.6615 22.7685 3.40121C23.1579 3.14091 23.5854 3.01172 24.049 3.01172C24.3758 3.01172 24.7197 3.09912 25.0788 3.27201L24.6437 4.47468C24.4784 4.92876 24.0471 5.23275 23.5626 5.23085H23.5569C23.1674 5.23085 22.8388 5.47215 22.569 5.95473C22.2992 6.43732 22.1662 7.38349 22.1662 8.79325L22.1757 9.28533V13.3664C20.7868 13.3664 19.6621 12.2416 19.6621 10.8528V3.27201H19.6602Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M58.6133 3.01172C60.1807 3.01172 61.5924 3.95599 62.1909 5.40375L63.8229 9.34613L65.6374 5.37335C66.2948 3.93509 67.7292 3.01172 69.3119 3.01172L64.0813 14.419C63.4163 15.8686 61.9686 16.7958 60.3745 16.7958L62.2289 12.823C62.3695 12.5209 62.3771 12.1751 62.2517 11.8674L58.6133 3.01172Z"
+                            fill="white"
+                        />
+                        <path
+                            d="M36.9461 8.95678H28.9214C29.0376 9.6639 29.3487 10.2251 29.851 10.6404C30.3532 11.0557 30.9979 11.2652 31.7775 11.2652C32.3172 11.2652 32.812 11.1567 33.2617 10.9397C33.9664 10.603 34.776 10.5656 35.4806 10.8948L36.099 11.1829C36.1965 11.2278 36.2302 11.355 36.1627 11.4411C35.6642 12.0995 35.0758 12.5897 34.4011 12.9189C33.6703 13.2743 32.8007 13.4539 31.7925 13.4539C30.2295 13.4539 28.9589 12.9638 27.9769 11.9798C26.9949 11.0033 26.5039 9.7724 26.5039 8.29081C26.5039 6.80922 26.9949 5.51471 27.9732 4.51576C28.9514 3.51306 30.1808 3.01172 31.6575 3.01172C33.2242 3.01172 34.4986 3.51306 35.4843 4.51576C36.4663 5.51845 36.9573 6.83916 36.9573 8.48536L36.9498 8.96052L36.9461 8.95678ZM34.4461 6.99255C34.2812 6.43883 33.9551 5.98612 33.4716 5.64191C32.9844 5.29396 32.4221 5.12186 31.7812 5.12186C31.0841 5.12186 30.4731 5.31641 29.9484 5.70552C29.6186 5.94871 29.3112 6.37897 29.0301 6.99255H34.4461Z"
+                            fill="white"
+                        />
+                        <circle cx="8.31079" cy="8.31079" r="8.31079" fill="#308BF9" />
+                        <path
+                            d="M8.31055 0C12.9004 0 16.6219 3.72074 16.6221 8.31055C16.6221 12.9005 12.9005 16.6221 8.31055 16.6221C3.72074 16.6219 0 12.9004 0 8.31055C0.000136577 3.72082 3.72082 0.00013658 8.31055 0ZM6.93164 3.11914C6.3182 2.72036 5.66895 2.84418 5.19336 3.15039C4.75822 3.43069 4.41721 3.88038 4.16992 4.3291C3.68119 5.21619 3.35403 6.48186 3.57422 7.52148C3.6895 8.06565 3.97728 8.63332 4.56543 8.9707C4.75442 9.07911 4.95664 9.15315 5.16895 9.19727C4.8487 10.0617 4.50645 10.8658 4.2334 11.4609C4.04133 11.8796 4.22482 12.3742 4.64355 12.5664C5.06267 12.7584 5.55882 12.5751 5.75098 12.1562C6.11417 11.3646 6.6042 10.2007 7.01562 8.98438C7.85924 8.68167 8.87647 8.10316 10.0996 7.18848C9.86237 7.87163 9.66146 8.56907 9.5293 9.23633C9.34562 10.1638 9.27403 11.1356 9.50684 11.9531C9.62687 12.3744 9.83489 12.7807 10.1729 13.1084C10.5152 13.4403 10.9485 13.6501 11.4463 13.7412C11.8997 13.8241 12.3349 13.5244 12.418 13.0713C12.5011 12.6182 12.2005 12.1837 11.7471 12.1006C11.5363 12.062 11.4152 11.987 11.3359 11.9102C11.2524 11.8291 11.1709 11.702 11.1123 11.4961C10.9878 11.0588 11.001 10.3988 11.167 9.56055C11.4945 7.90669 12.3347 5.95263 13.0215 4.65234C13.2109 4.2933 13.1138 3.85023 12.792 3.60254C12.4701 3.35488 12.0168 3.37456 11.7178 3.64941C9.97471 5.25187 8.63053 6.25683 7.61816 6.84961C7.74419 6.25522 7.8235 5.67112 7.81934 5.14746C7.81387 4.46643 7.66216 3.59419 6.93164 3.11914ZM6.07715 4.62207C6.11626 4.73042 6.14738 4.90511 6.14941 5.16113C6.1535 5.67601 6.03765 6.36063 5.83203 7.13965C5.79372 7.28477 5.75308 7.43166 5.70996 7.5791C5.52806 7.58393 5.43471 7.54537 5.39648 7.52344C5.34338 7.49288 5.25762 7.41463 5.20703 7.17578C5.09549 6.64867 5.26765 5.79653 5.63281 5.13379C5.79302 4.84307 5.94979 4.66527 6.05957 4.58008C6.06499 4.59196 6.07125 4.60574 6.07715 4.62207Z"
+                            fill="white"
+                        />
+                    </svg>
+
+                    <p class="report">Health Report</p>
+                </div>
+                <div class="page-content single-score-wrapper sugar-scpre">
+                    <svg class="water_mark" width="370" height="420" viewBox="0 0 370 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            opacity="0.05"
+                            fill-rule="evenodd"
+                            clip-rule="evenodd"
+                            d="M65.0049 10.9302C83.3097 -0.888159 108.294 -5.66958 131.909 9.71685C160.035 28.0433 165.878 61.6979 166.087 87.9727C166.247 108.178 163.177 130.701 158.325 153.636C197.289 130.771 249.02 91.9962 316.114 30.1719C327.623 19.5669 345.084 18.8019 357.474 28.3599C369.863 37.9179 373.582 55.0223 366.283 68.8747C339.852 119.033 307.522 194.392 294.917 258.189C288.527 290.528 288.031 315.988 292.824 332.859C295.082 340.804 298.196 345.719 301.412 348.845C304.461 351.809 309.129 354.672 317.241 356.161C334.695 359.364 346.252 376.133 343.054 393.614C339.855 411.096 323.113 422.671 305.659 419.467C286.497 415.95 269.838 407.841 256.661 395.033C243.651 382.387 235.638 366.732 231.019 350.475C222.059 318.941 224.811 281.471 231.88 245.694C236.967 219.949 244.722 193.044 253.855 166.684C206.776 201.973 167.633 224.3 135.163 235.978C119.328 282.895 100.453 327.781 86.4752 358.318C79.0801 374.474 60.009 381.566 43.8786 374.16C27.7482 366.753 20.6668 347.652 28.0618 331.496C38.5706 308.538 51.7604 277.538 64.0859 244.192C55.9125 242.49 48.1306 239.623 40.8549 235.439C18.2171 222.424 7.12636 200.528 2.6904 179.535C-5.7851 139.426 6.82943 90.5967 25.6441 56.377C35.161 39.0678 48.2579 21.7428 65.0049 10.9302ZM84.8977 181.752C86.5584 176.06 88.1346 170.4 89.6099 164.797C97.5236 134.746 101.987 108.346 101.83 88.4846C101.751 78.6087 100.526 71.8835 99.0203 67.7038C98.7922 67.0704 98.5695 66.5289 98.3601 66.0688C94.1348 69.3536 88.1009 76.205 81.9329 87.4232C67.8742 112.993 61.2604 145.874 65.5573 166.209C67.5075 175.438 70.8031 178.447 72.8463 179.622C74.3176 180.468 77.897 181.938 84.8977 181.752Z"
+                            fill="#308BF9"
+                        />
+                    </svg>
+                    <div class="subject-details-table">
+                        <table>
+                            <tr>
+                                <th>Name</th>
+                                <td><?php echo $name  ?></td>
+                            </tr>
+                            <tr>
+                                <th>Gender</th>
+                                <td><?php echo $gender  ?></td>
+                            </tr>
+
+                            <tr>
+                                <th>Height</th>
+                                <td>
+                                    <?php echo $height  ?>
+                                    cm
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Weight</th>
+                                <td>
+                                    <?php echo $weight  ?>
+                                    kg
+                                </td>
+                            </tr>
+                        </table>
+                        <table>
+                            <tr>
+                                <th style="text-align: start;">BMI</th>
+                                <td style="text-align: start;"><?php echo calculateBMI($weight, $height)  ?></td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: start;">BMR</th>
+                                <td style="text-align: start;"><?php echo calculateBMR($weight, $height,$age, $gender)  ?></td>
+                            </tr>
+
+                            <tr>
+                                <th style="text-align: start;">Subject id</th>
+                                <td style="text-align: start;"><?php echo $profile_id; ?></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="divider"></div>
+                    <div class="scre-in-details-wrapper">
+                        <h4 class="title">Score Name:Gut Score</h4>
+
+                        <ul>
+                            <li>
+                                <?php echo getClinicalInsight("gutScore"); ?>
+                            </li>
+                        </ul>
+                        <table>
+                            <tr>
+                                <th>Score percentage</th>
+                                <th>Score range</th>
+                                <th>Fermentation Activity</th>
+                                <th>Respyr Score Meaning</th>
+                                <th>Clinical Considerations / Suggested Next Steps</th>
+                            </tr>
+                            <tr>
+                                <td><?php echo $guts  ?></td>
+                                <td class="notranslate">
+                                    <?php echo getScoreCategorySpan($guts); ?>
+                                </td>
+                                <td><?php echo getGutScoreFermentationActivity($guts); ?></td>
+                                <td><?php echo getRespyrScoreMeaningGutScore($guts); ?></td>
+                                <td><?php echo getClinicalSuggestionGutScore($guts); ?></td>
+                            </tr>
+                        </table>
+
+                        <table style="table-layout: auto; width: 100%;">
+                            <tr>
+                                <th>Main Marker</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <ul>
+                                        <li>Hydrogen(H2)</li>
+                                        <li>
+                                            Hydrogen (H₂) in ppm, measured in exhaled breath. Elevated levels suggest fermentation activity due to unabsorbed carbohydrates.
+                                        </li>
+                                    </ul>
+                                </td>
+                                <td class="notranslate">
+                                    <?php echo $h2_ppm; ?>
+                                </td>
+                                <td>ppm</td>
+                            </tr>
+                        </table>
+
+                        <ul>
+                            <li>
+                                Correlation: <br />
+                                <?php echo getClinicalCorrelation("gutScore"); ?>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="client-logo-container">
+                    <h5>Report generated by</h5>
+                    <img class="report-logo-img" alt="Report Logo" crossorigin="anonymous" />
+                </div>
+
+                <!-- <div class="page-footer"></div> -->
+            </section>
+        </div>
+    </body>
+</html>
+
+<div id="toast" style="position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #323232; color: white; padding: 12px 20px; border-radius: 8px; display: none; z-index: 99999;"></div>
+
+<!-- 📩 Modal -->
+<style>
+    /* send-report dialog, styled to match the dashboard's design language */
+    #emailModal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 18px; }
+    .rsp-mailcard {
+        background: #fff; width: 100%; max-width: 380px; border-radius: 16px;
+        padding: 24px 24px 20px; box-shadow: 0 24px 64px rgba(15, 23, 42, 0.35);
+        font-family: "Poppins", sans-serif; text-align: center;
+    }
+    .rsp-mailcard .icn {
+        width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 12px;
+        background: #eaf3fe; color: #308bf9; display: flex; align-items: center; justify-content: center;
+    }
+    .rsp-mailcard h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; letter-spacing: -0.32px; color: #252525; }
+    .rsp-mailcard .sub { margin: 0 0 16px; font-size: 12px; color: #738298; letter-spacing: -0.24px; line-height: 1.45; }
+    .rsp-mailcard label { display: block; text-align: left; font-size: 11.5px; font-weight: 500; color: #535359; letter-spacing: -0.23px; margin: 0 0 5px 2px; }
+    .rsp-mailcard input {
+        width: 100%; box-sizing: border-box; padding: 10px 13px; font-family: "Poppins", sans-serif;
+        font-size: 13px; letter-spacing: -0.26px; color: #252525;
+        border: 1px solid #dce3ed; border-radius: 10px; background: #f5f7fa; outline: none;
+        transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+    }
+    .rsp-mailcard input:focus { border-color: #308bf9; background: #fff; box-shadow: 0 0 0 3px rgba(48, 139, 249, 0.14); }
+    .rsp-mailcard input.err { border-color: #e45757; background: #fff; box-shadow: 0 0 0 3px rgba(228, 87, 87, 0.12); }
+    .rsp-mailcard .errmsg { display: none; text-align: left; margin: 6px 0 0 2px; font-size: 11px; color: #e45757; letter-spacing: -0.22px; }
+    .rsp-mailcard .acts { display: flex; gap: 10px; margin-top: 18px; }
+    .rsp-mailcard .acts button {
+        flex: 1; padding: 10px 0; border-radius: 999px; border: none; cursor: pointer;
+        font-family: "Poppins", sans-serif; font-size: 12.5px; font-weight: 600; letter-spacing: -0.25px;
+        transition: background 0.12s;
+    }
+    .rsp-mailcard .acts .ghost { background: #f5f7fa; color: #535359; border: 1px solid #dce3ed; }
+    .rsp-mailcard .acts .ghost:hover { background: #ebeff5; color: #252525; }
+    .rsp-mailcard .acts .solid { background: #308bf9; color: #fff; }
+    .rsp-mailcard .acts .solid:hover { background: #2277e0; }
+</style>
+<div id="emailModal">
+    <div class="rsp-mailcard" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
+        <div class="icn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 7 9-7"/></svg>
+        </div>
+        <h3 id="mailTitle">Send report</h3>
+        <p class="sub">The report PDF will be emailed to this address.</p>
+        <label for="userEmail">Email address</label>
+        <input type="email" id="userEmail" placeholder="name@example.com" autocomplete="email" />
+        <p class="errmsg" id="mailErr">Please enter a valid email address.</p>
+        <div class="acts">
+            <button type="button" class="ghost notranslate" onclick="closeModal()">Cancel</button>
+            <button type="button" class="solid notranslate" onclick="sendEmailPDF()">Send report</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // The report's clinic logo now comes from our own dashboard backend. It
+    // used to be an <img src> pointing straight at humorstech.com, so every
+    // report rendered depended on the old PHP server still being up.
+    //
+    // Because the src is now set AFTER a fetch, both PDF builders have to wait
+    // on __reportLogoReady before html2canvas runs: an <img> with no src
+    // reports complete === true, so the existing document.images wait would
+    // sail straight past it and capture the report with no logo on it.
+    window.__reportLogoReady = (async function () {
+        const imgs = Array.from(document.querySelectorAll(".report-logo-img"));
+        if (!imgs.length) return;
+
+        const hide = function (img) {
+            const container = img.closest(".client-logo-container");
+            if (container) container.style.display = "none";
+        };
+
+        const loginId = <?php echo json_encode($login_id); ?>;
+        const jwt = localStorage.getItem("jwt_token") || "";
+        let src = null;
+        try {
+            const res = await fetch(`${window.NODE_API || "http://localhost:3001"}/api/clinic/logos`, {
+                method: "POST",
+                headers: jwt
+                    ? { "Content-Type": "application/json", Authorization: "Bearer " + jwt }
+                    : { "Content-Type": "application/json" },
+                body: JSON.stringify({ login_id: loginId }),
+            });
+            const data = await res.json();
+            if (data && data.status === "success") src = (data.data || {}).report_logo_src || null;
+        } catch (e) {
+            console.warn("Report logo unavailable:", e.message);
+        }
+
+        // No logo on file for this clinic: hide the slot rather than leaving a
+        // broken-image box in the middle of a clinical report.
+        if (!src) { imgs.forEach(hide); return; }
+
+        await Promise.all(imgs.map(function (img) {
+            return new Promise(function (resolve) {
+                img.onload = resolve;
+                img.onerror = function () { hide(img); resolve(); };
+                img.src = src;
+            });
+        }));
+    })();
+</script>
+
+<script>
+    let emailBtn = document.getElementById("emailBtn");
+    let downloadBtn = document.getElementById("downloadBtn");
+    let pdfBlob = null;
+
+    function showToast(msg, duration = 3000) {
+        const toast = document.getElementById("toast");
+        toast.textContent = msg;
+        toast.style.display = "block";
+        setTimeout(() => {
+            toast.style.display = "none";
+        }, duration);
+    }
+
+    function closeModal() {
+        document.getElementById("emailModal").style.display = "none";
+        // clear the address: reopening used to show the PREVIOUS patient's
+        // email ready to re-send with one Enter
+        document.getElementById("userEmail").value = "";
+        clearMailError();
+    }
+
+    function clearMailError() {
+        document.getElementById("userEmail").classList.remove("err");
+        document.getElementById("mailErr").style.display = "none";
+    }
+
+    // dialog niceties: Enter sends, typing clears the error, backdrop closes
+    document.getElementById("userEmail").addEventListener("keydown", (e) => { if (e.key === "Enter") sendEmailPDF(); });
+    document.getElementById("userEmail").addEventListener("input", clearMailError);
+    document.getElementById("emailModal").addEventListener("click", (e) => { if (e.target.id === "emailModal") closeModal(); });
+
+    async function downloadPDFOnly() {
+        if (downloadBtn.disabled) return; // already building
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = "Downloading...";
+        try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF("p", "mm", "a4");
+        const sections = document.querySelectorAll(".pdf-page-wrapper");
+
+        // The logo is fetched, so its <img> may still be waiting for a src.
+        await window.__reportLogoReady;
+
+        // ✅ Wait for all images to load before rendering
+        await Promise.all(
+            Array.from(document.images)
+                .filter((img) => !img.complete)
+                .map(
+                    (img) =>
+                        new Promise((resolve) => {
+                            img.onload = img.onerror = resolve;
+                        })
+                )
+        );
+
+        for (let i = 0; i < sections.length; i++) {
+            const canvas = await html2canvas(sections[i], {
+                scale: 4,
+                useCORS: true,
+                scrollY: -window.scrollY,
+            });
+
+            const imgData = canvas.toDataURL("image/jpeg", 1.0);
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            if (i > 0) pdf.addPage();
+            pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        const nameParam = urlParams.get("name") || "Unknown";
+
+
+
+        const name = nameParam.trim().replace(/\+/g, "_").replace(/\s+/g, "_"); // jaya rajput → jaya_rajput
+
+      //  const [datePart, timePart] = dttmParam.split(" "); // ["06/05/2025", "18:41:34"]
+
+/*        let formattedDateTime = "unknown_date_time";
+
+        if (datePart && timePart) {
+            const [day, month, year] = datePart.split("/"); // dd/mm/yyyy
+            const [hourStr] = timePart.split(":"); // get hour only
+            const hour = parseInt(hourStr, 10);
+
+            const ampm = hour >= 12 ? "PM" : "AM";
+            const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+
+            const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+            const monthText = monthNames[parseInt(month, 10) - 1] || "UNK";
+
+            formattedDateTime = `${day}_${monthText}_${year}_${String(hour12).padStart(2, "0")}_${ampm}`;
+        }
+
+        const fileName = `REPORT_${name}_${formattedDateTime}.pdf`; */
+
+
+
+
+const dttmParam = urlParams.get("dttm") || "";
+let formattedDateTime = "unknown_date_time";
+
+if (dttmParam.includes(" ")) {
+  const [datePart, timePart] = dttmParam.split(" "); // "01/07/2026" "15:22:44"
+  const [month, day, year] = datePart.split("/");   // ✅ MM/DD/YYYY
+
+  // Build a date assuming it's IST (most likely in your case)
+  // If your input is UTC, add "Z" at end and keep timeZone Asia/Kolkata.
+  const dateObj = new Date(`${year}-${month}-${day}T${timePart}`);
+
+  const parts = new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).formatToParts(dateObj);
+
+  const get = (t) => parts.find(p => p.type === t)?.value;
+
+  formattedDateTime =
+    `${get("day")}_${get("month").toUpperCase()}_${get("year")}` +
+    `_${get("hour")}_${get("minute")}_${get("dayPeriod").toUpperCase()}`;
+}
+
+const safeName = (name || "unknown").replace(/[^a-z0-9_-]/gi, "");
+const fileName = `REPORT_${safeName}_${formattedDateTime}.pdf`;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        pdf.save(fileName);
+        } catch (err) {
+            // without this the button stayed on "Downloading..." forever and
+            // the user had no idea the build had failed
+            console.error(err);
+            showToast("Could not build the PDF. Please try again.");
+        } finally {
+            downloadBtn.disabled = false;
+            downloadBtn.textContent = "Download PDF";
+        }
+    }
+
+    // ⬇️ Open Modal and Prepare PDF
+    // Rendering the A4 pages to a PDF takes a few seconds, so the dialog no
+    // longer waits for it: it opens instantly and the PDF builds in the
+    // background while the user types their address.
+    let pdfBuildPromise = null;
+
+    async function buildPDFBlob() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF("p", "mm", "a4");
+        const sections = document.querySelectorAll(".pdf-page-wrapper");
+
+        // Same two waits the download path does. This builder never had them:
+        // that was survivable while every src was hardcoded into the HTML and
+        // loaded during page render, but the logo is fetched now.
+        await window.__reportLogoReady;
+        await Promise.all(
+            Array.from(document.images)
+                .filter((img) => !img.complete)
+                .map((img) => new Promise((resolve) => { img.onload = img.onerror = resolve; }))
+        );
+        // The page scroll is snapshotted once: the build runs in the background
+        // while the user types, and re-reading scrollY per section produced
+        // offset/blank pages if they scrolled meanwhile.
+        const scrollAtStart = window.scrollY;
+
+        for (let i = 0; i < sections.length; i++) {
+            const canvas = await html2canvas(sections[i], {
+                // scale 2 / quality 0.9 keeps the email attachment under typical
+                // PHP upload limits; the Download path stays at 4 for print.
+                scale: 2,
+                useCORS: true,
+                scrollY: -scrollAtStart,
+            });
+
+            const imgData = canvas.toDataURL("image/jpeg", 0.9);
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            if (i > 0) pdf.addPage();
+            pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+        }
+
+        return pdf.output("blob");
+    }
+
+    function preparePDFAndShowModal() {
+        document.getElementById("emailModal").style.display = "flex";
+        setTimeout(() => document.getElementById("userEmail").focus(), 60);
+        if (!pdfBlob && !pdfBuildPromise) {
+            pdfBuildPromise = buildPDFBlob()
+                .then((blob) => { pdfBlob = blob; })
+                .catch((err) => { console.error(err); })
+                .finally(() => { pdfBuildPromise = null; });
+        }
+    }
+
+    // ⬇️ Send Email
+    let sendingEmail = false;
+    async function sendEmailPDF() {
+        if (sendingEmail) return; // Enter twice (or Enter + click) sent two emails
+        const email = document.getElementById("userEmail").value.trim();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            document.getElementById("userEmail").classList.add("err");
+            document.getElementById("mailErr").style.display = "block";
+            document.getElementById("userEmail").focus();
+            return;
+        }
+
+        sendingEmail = true;
+        // If the background build is still running, wait for it here.
+        if (!pdfBlob && pdfBuildPromise) {
+            showToast("Preparing PDF...");
+            await pdfBuildPromise;
+        }
+        if (!pdfBlob) {
+            sendingEmail = false;
+            showToast("Could not prepare the PDF. Please try again.");
+            return;
+        }
+
+        closeModal();
+        showToast("Sending...");
+
+        const params = new URLSearchParams(window.location.search);
+        const name = params.get("name") || "User";
+        const formData = new FormData();
+        formData.append("email", email);
+        formData.append("name", name);
+        formData.append("pdf", new File([pdfBlob], "Health_Report.pdf", { type: "application/pdf" }));
+
+        // Sent by the Node dashboard backend; report/send_email1.php is gone.
+        // The sender's brand name is no longer posted from here - the backend
+        // takes it from the token, so one clinic cannot mail as another.
+        const jwtForMail = localStorage.getItem("jwt_token") || "";
+        fetch(`${window.NODE_API || "http://localhost:3001"}/api/dashboard/send-report-email`, {
+            method: "POST",
+            headers: jwtForMail ? { Authorization: "Bearer " + jwtForMail } : {},
+            body: formData,
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                // the server answers "Missing PDF or email" when the attachment
+                // exceeded PHP's upload limit — say what actually happened
+                if (data && data.success === false && /missing pdf/i.test(data.message || "")) {
+                    showToast("The report was too large to email. Please download it instead.");
+                } else {
+                    showToast(data.message || "Email sent!");
+                }
+            })
+            .catch((err) => {
+                console.error(err);
+                showToast("Failed to send email.");
+            })
+            .finally(() => { sendingEmail = false; });
+    }
+
+    // Events
+    downloadBtn.addEventListener("click", downloadPDFOnly);
+    emailBtn.addEventListener("click", preparePDFAndShowModal);
+</script>
+
+<script>
+    const backgroundColorPlugin = {
+        id: "customBackgroundColor",
+        beforeDraw: (chart) => {
+            const {
+                ctx,
+                chartArea: { top, bottom, left, right },
+                scales: { y },
+            } = chart;
+
+            const ranges = [
+                { from: 80, to: 101, color: "rgba(63, 175, 88, 0.1)" },
+                { from: 70, to: 79.9, color: "rgba(255, 196, 18, 0.1)" },
+                { from: 0, to: 69.9, color: "rgba(234, 84, 85, 0.1)" },
+            ];
+
+            ranges.forEach((range) => {
+                const yStart = y.getPixelForValue(range.to);
+                const yEnd = y.getPixelForValue(range.from);
+                ctx.fillStyle = range.color;
+                ctx.fillRect(left, yStart, right - left, yEnd - yStart);
+            });
+        },
+    };
+
+    async function renderAllCharts() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const loginId = urlParams.get("login_id");
+            const profileId = urlParams.get("profile_id");
+
+            const t = localStorage.getItem("jwt_token");
+            const response = await fetch(`${window.NODE_API || "http://localhost:3001"}/api/dashboard/trend-7-days?login_id=${loginId}&profile_id=${profileId}`, {
+                headers: t ? { Authorization: "Bearer " + t } : {},
+            });
+            let data = await response.json();
+
+            // Reverse the data array
+            data = data.reverse();
+
+            const labels = data.map((item) => {
+                const [month, day, yearTime] = item.dttm.split("/");
+                const [year] = yearTime.split(" ");
+                const date = new Date(`${year}-${month}-${day}`);
+                return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+            });
+
+            const datasets = {
+                Db_Score: data.map((item) => item.Db_Score),
+                Gut_Score_per: data.map((item) => item.Gut_Score_per),
+                liver_score: data.map((item) => item.liver_score),
+                Blow_Score: data.map((item) => item.Blow_Score),
+            };
+
+            renderChart("dbChart", "Sugar Score", labels, datasets.Db_Score);
+            renderChart("gutChart", "Gut Score", labels, datasets.Gut_Score_per);
+            renderChart("liverChart", "Liver Score", labels, datasets.liver_score);
+            renderChart("blowChart", "Respiratory Score", labels, datasets.Blow_Score);
+        } catch (err) {
+            console.error("Fetch error:", err);
+        }
+    }
+
+    function renderChart(canvasId, label, labels, data) {
+        const ctx = document.getElementById(canvasId).getContext("2d");
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label,
+                        data,
+                        borderColor: "#308BF9",
+                        backgroundColor: "transparent",
+                        tension: 0,
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 4,
+                        pointBackgroundColor: "#308BF9",
+                        pointBorderColor: "#0000",
+                        pointBorderWidth: 0,
+                    },
+                ],
+            },
+            options: {
+
+                  animation: {
+        duration: 0
+    },
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false,
+                        position: "bottom",
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: "circle",
+                            boxWidth: 10,
+                            color: "#535359",
+                            font: {
+                                family: "Poppins",
+                                size: 10,
+                                weight: "400",
+                            },
+                        },
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        min: 0,
+                        max: 105,
+                        ticks: {
+                            stepSize: 20,
+                            callback: function (value) {
+                                if (value === 0) return "";
+                                if (value === 105) return "100";
+                                return value;
+                            },
+                            font: {
+                                family: "Poppins",
+                                size: 10,
+                                style: "normal",
+                                weight: "400",
+                            },
+                        },
+                        grid: {
+                            display: false,
+                        },
+                    },
+                    x: {
+                        offset: true,
+                        ticks: {
+                            maxRotation: 0,
+                            minRotation: 0,
+                            font: {
+                                family: "Poppins",
+                                size: 10,
+                                style: "normal",
+                                weight: "400",
+                            },
+                        },
+                        grid: {
+                            display: false,
+                        },
+                    },
+                },
+            },
+            plugins: [backgroundColorPlugin],
+        });
+    }
+
+    renderAllCharts();
+</script>
+
+<script>
+    // 1. Input pressure data string
+    // The breath trace can be several KB. URL-encoded that blew past Apache's
+    // 8 KB request-line limit (a 414, and the report silently failed to open),
+    // so it is handed over through sessionStorage — same origin, no size limit
+    // in practice. The query-string fallback keeps older links working.
+    // json_encode also stops a quote in the data breaking out of this literal.
+    const pressureString = (function () {
+        try {
+            const k = new URLSearchParams(location.search).get("bk");
+            if (k) {
+                const v = sessionStorage.getItem(k);
+                if (v !== null) return v;
+            }
+        } catch (e) { /* private mode / blocked storage */ }
+        return <?php echo json_encode($_GET['blow_raw_values'] ?? ''); ?>;
+    })();
+
+
+const pressures = pressureString.split(',').map(Number);
+const maxPressure = Math.max(...pressures);
+
+console.log(maxPressure); 
+
+
+
+    document.getElementById("maxPressureResult").textContent = maxPressure.toFixed(2);
+
+
+
+
+
+
+
+
+
+      //  "908.18,935.55,935.55,942.67,942.67,947.27,947.27,952.14,952.14,954.53,954.53,958.58,958.58,966.57,966.57,973.36,973.36,984.28,984.28,989.77,989.77,989.96,989.96,993.19,993.19,992.05,992.05,990.24,990.24,988.77,988.77,985.92,985.92,983.14,983.14,981.15,981.15,980.48,980.48,977.57,977.57,977.20,977.20,974.14,974.14,967.44,967.44,961.87,961.87,955.92,955.92,946.52,946.52,930.55,930.55";
+
+    // 2. Convert to array of numbers
+    const allPressures = pressureString.split(",").map(Number);
+
+    // 3. Function to calculate lung flows
+    function calculateLungFlows({ allPressures, chamberVolume = 39.509211, deltaT = 0.125, calibrationConstant = 0.25 }) {
+        if (!Array.isArray(allPressures) || allPressures.length < 2) {
+            throw new Error("At least two pressure readings are required.");
+        }
+
+        const basePressure = allPressures[0];
+        const pressures = allPressures.slice(1);
+        const timeFlowData = [];
+
+        for (let i = 0; i < pressures.length; i++) {
+            const time = (i + 1) * deltaT;
+            const rawFlow = (chamberVolume * (1 - basePressure / pressures[i])) / deltaT;
+            const calibratedFlow = rawFlow * calibrationConstant;
+            timeFlowData.push({ x: time.toFixed(3), y: calibratedFlow });
+        }
+
+        return timeFlowData;
+    }
+
+    // 4. Get calculated data
+    const flowData = calculateLungFlows({ allPressures });
+
+    // 5. Render Chart
+    const ctx = document.getElementById("lungPerformanceChart").getContext("2d");
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            datasets: [
+                {
+                    label: "Lung Flow (calibrated)",
+                    data: flowData,
+                    borderColor: "#308BF9",
+                    backgroundColor: "rgba(54, 162, 235, 0.2)",
+                    tension: 0.2,
+                    fill: false,
+                    borderWidth: 4,
+                    pointRadius: 0, // ✅ Hides dots
+                    pointHoverRadius: 0,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            animation: false,
+            plugins: {
+                legend: {
+                    display: false,
+                },
+                title: {
+                    display: false,
+                    text: "Lung Performance Chart",
+                    font: { size: 20 },
+                },
+            },
+            scales: {
+                y: {
+                    grid: {
+                        borderDash: [5, 5],
+                        drawBorder: true,
+                        drawOnChartArea: true,
+                        color: "rgba(149, 149, 149, 1)",
+                    },
+                    border: {
+                        dash: [10, 10],
+                        borderWidth: 2,
+                    },
+                    title: {
+                        display: true,
+                        text: "Flow in L/s",
+                        color: "#959595",
+                        font: {
+                            family: "Arimo",
+                            size: 13.3,
+                            weight: "400",
+                            style: "normal",
+                            lineHeight: 1.3,
+                        },
+                    },
+                    ticks: {
+                        color: "#959595",
+                        align: "end",
+                        font: {
+                            family: "Arimo",
+                            size: 13.3,
+                            weight: "400",
+                            style: "normal",
+                            lineHeight: 1.3,
+                        },
+                    },
+                },
+                x: {
+                    grid: {
+                        display: false,
+                    },
+
+                    ticks: {
+                        stepSize: 10,
+                        autoSkip: true,
+                        maxTicksLimit: 6,
+                        color: "#959595",
+                        align: "end",
+                        font: {
+                            family: "Arimo",
+                            size: 13.3,
+                            weight: "400",
+                            style: "normal",
+                            lineHeight: 1.3,
+                        },
+                    },
+                    title: {
+                        display: true,
+                        text: "Time (seconds)",
+                        color: "#959595",
+                        font: {
+                            family: "Arimo",
+                            size: 13.3,
+                            weight: "400",
+                            style: "normal",
+                            lineHeight: 1.3,
+                        },
+                    },
+                },
+            },
+        },
+    });
+</script>

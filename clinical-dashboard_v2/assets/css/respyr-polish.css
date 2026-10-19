@@ -1,0 +1,1869 @@
+/* ===========================================================================
+   Respyr dashboard — v10: design-system tokens + DARK THEME.
+   Loaded LAST in head.php, so equal-specificity rules here win over the
+   template (style.css/main.css) and the page's inline styles.
+
+   THEMING: components only use the SEMANTIC vars (--canvas, --card-bg, --tx1…).
+   (class added in head.php — remove that one line to go back to light)
+   redefines just the semantic layer. Chart.js colors are themed in
+   =========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ---- Respyr design-system tokens (Figma) ---- */
+  --page-bg:        #f5f7fa;
+  --white:          #ffffff;
+  --dark:           #252525;
+  --blue:           #308bf9;
+  --blue-light:     #e9f3ff;
+  --green:          #3faf58;
+  --green-light:    #eaffef;
+  --orange:         #e48326;
+  --amber:          #ffbf2d;
+  --red:            #e74c3c;
+  --text-primary:   #252525;
+  --text-secondary: #535359;
+  --text-muted:     #738298;
+  --text-disabled:  #a1a1a1;
+  --border:         #e1e6ed;
+  --surface:        #f5f7fa;
+  --font:           'Poppins', sans-serif;
+  --r-card:         15px;
+  --r-input:        8px;
+  --r-badge:        6px;
+  --r-pill:         33px;
+
+  /* ---- Semantic layer (LIGHT defaults) ----
+     Canvas is deliberately deeper than the DS page-bg (#f5f7fa): the user
+     found white cards indistinguishable from #f5f7fa, so the page sits on a
+     clearly grey canvas and the white cards read as raised surfaces. */
+  --canvas:      #e8edf4;
+  --card-bg:     var(--white);
+  --card-line:   #dce3ed;          /* inner dividers */
+  --card-edge:   #c8d3e2;          /* card outline — clearly visible boundary */
+  --inner:       var(--surface);   /* inner panels, hovers */
+  --tx1:         var(--text-primary);
+  --tx2:         var(--text-secondary);
+  --tx3:         var(--text-muted);
+  --accent-tint: var(--blue-light);
+  --track:       #e8edf4;          /* progress track */
+  --shadow-card: 0 1px 2px rgba(37,37,37,0.06), 0 8px 20px rgba(50,65,90,0.09);
+}
+
+/* ---- DARK theme: redefine only the semantic layer ---- */
+
+/* ---------- Base / canvas ---------- */
+html, body { background: var(--canvas) !important; }
+.new-dashboard, .section.new-dashboard, .section { background: var(--canvas) !important; }
+.new-dashboard,
+.new-dashboard input, .new-dashboard select, .new-dashboard button,
+.new-dashboard textarea, .new-dashboard table, .sidebar-nav, .sidebar, .header {
+  font-family: var(--font) !important;
+}
+.new-dashboard { color: var(--tx1); letter-spacing: -0.26px; }
+.new-dashboard .container-fluid { padding: 24px 28px 40px; }
+.new-dashboard a { color: var(--blue); }
+
+/* ---------- Grid rows ---------- */
+.new-dashboard .rsp-row { --bs-gutter-x: 20px; --bs-gutter-y: 20px; }
+.new-dashboard .rsp-row + .rsp-row { margin-top: 20px; }
+
+/* ---------- Page heading ---------- */
+.rsp-pagehead { margin: 2px 0 20px; }
+.rsp-pagetitle {
+  font-size: 20px !important; font-weight: 600 !important;
+  color: var(--tx1) !important; letter-spacing: -0.4px !important; margin: 0 0 4px !important;
+}
+.rsp-pagesub { font-size: 12px; color: var(--tx3); letter-spacing: -0.24px; margin: 0; }
+
+/* ---------- Card shell ---------- */
+.new-dashboard .rsp-card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-edge) !important;
+  border-radius: var(--r-card) !important;
+  box-shadow: var(--shadow-card) !important;
+  padding: 24px !important;
+  margin: 0 !important;
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+.new-dashboard .rsp-card:hover {
+  box-shadow: 0 2px 4px rgba(37,37,37,0.06), 0 16px 32px rgba(50,65,90,0.13) !important;
+  transform: translateY(-2px);
+}
+/* muted icon before card titles */
+.rsp-ti { color: #b3bdcc; font-size: 13px; margin-right: 9px; vertical-align: 0.5px; }
+.rsp-card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0 0 16px; padding: 0 0 14px;
+  border-bottom: 1px solid var(--card-line);
+  min-height: 56px; /* same head height on every card → dividers align across a row */
+}
+/* title and dropdown stay on ONE line at every width: the dropdown keeps its
+   natural size, the title shrinks and ellipsizes when the card gets narrow */
+.rsp-card-head select, .rsp-card-head .rsp-link { flex: 0 0 auto; max-width: 100%; }
+.rsp-card-title {
+  font-size: 18px !important; font-weight: 600 !important;
+  color: var(--tx1) !important; letter-spacing: -0.36px !important; margin: 0 !important;
+  white-space: nowrap;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+.rsp-card-sub {
+  font-size: 11px; font-weight: 500; letter-spacing: -0.22px;
+  background: var(--accent-tint); color: var(--blue);
+  padding: 4px 12px; border-radius: var(--r-pill);
+  margin-left: 8px; vertical-align: 2px;
+}
+.rsp-link {
+  font-size: 13px; font-weight: 500; letter-spacing: -0.26px;
+  color: var(--blue) !important; text-decoration: none;
+}
+.rsp-link:hover { text-decoration: underline; }
+
+/* ---------- KPI cards — shadcn stat-card anatomy: header row with a plain
+   label left and an outlined context badge right, a large semibold value,
+   then a two-line footer (lead + muted detail) pinned to the card bottom. ---------- */
+.new-dashboard .card.rsp-kpi {
+  display: flex !important; flex-direction: column !important;
+  align-items: stretch !important; justify-content: flex-start !important;
+  text-align: left !important;
+}
+.rsp-kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.rsp-kpi-label {
+  font-size: 15px !important; font-weight: 600 !important;
+  letter-spacing: -0.3px !important; color: var(--tx2) !important; margin: 2px 0 0 !important;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rsp-kpi-ctx { font-size: 12px; }
+.rsp-kpi-badge {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  border: 1px solid var(--card-line); background: var(--card-bg); color: var(--tx2);
+  font-size: 11px; font-weight: 600; letter-spacing: -0.22px;
+  padding: 4px 10px; border-radius: var(--r-input); white-space: nowrap;
+}
+.rsp-kpi-badge i { font-size: 10px; color: var(--tx3); }
+.rsp-kpi-value {
+  font-size: 30px !important; font-weight: 600 !important;
+  color: var(--tx1) !important; letter-spacing: -0.9px !important;
+  margin: 0 0 18px !important; line-height: 1.1 !important;
+  display: flex; align-items: baseline; gap: 3px; justify-content: flex-start;
+  font-variant-numeric: tabular-nums;
+}
+.rsp-kpi-frac { font-size: 14px; font-weight: 500; color: var(--tx3); letter-spacing: -0.28px; }
+/* hero numbers in the single brand accent — the rest of the card stays quiet */
+.rsp-kpi .rsp-kpi-value { color: var(--blue) !important; }
+.rsp-kpi-foot { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
+.rsp-kpi-f1 {
+  font-size: 13px !important; font-weight: 500 !important;
+  letter-spacing: -0.26px !important; color: var(--tx2) !important; margin: 0 !important;
+}
+.rsp-kpi-f2 {
+  font-size: 11.5px !important; font-weight: 400 !important;
+  letter-spacing: -0.23px !important; color: var(--tx3) !important; margin: 0 !important;
+}
+.rsp-kpi-foot progress.rsp-progress { height: 6px !important; margin: 4px 0 8px; }
+
+/* allowance progress bar (JS toggles green-bar / red-bar) */
+progress.rsp-progress {
+  width: 100% !important; height: 8px !important; margin-top: 12px;
+  border: none !important; border-radius: 4px; overflow: hidden;
+  background: var(--track) !important;
+  appearance: none; -webkit-appearance: none;
+}
+progress.rsp-progress::-webkit-progress-bar { background: var(--track) !important; border-radius: 4px; }
+progress.rsp-progress.green-bar::-webkit-progress-value { background: var(--green) !important; border-radius: 4px; }
+progress.rsp-progress.red-bar::-webkit-progress-value { background: var(--red) !important; border-radius: 4px; }
+progress.rsp-progress.green-bar::-moz-progress-bar { background: var(--green); }
+progress.rsp-progress.red-bar::-moz-progress-bar { background: var(--red); }
+
+/* ---------- Selects & score dropdown (form-input pattern) ---------- */
+.rsp-select,
+#rangeSelector, #scoreTypeSelector, #scoreRangeSelector {
+  border: 1px solid var(--card-line) !important; border-radius: var(--r-input) !important;
+  background: var(--card-bg) !important; color: var(--tx1) !important;
+  font-size: 13px !important; font-weight: 400 !important;
+  padding: 0 14px !important; height: 42px; min-height: 42px;
+  letter-spacing: -0.26px !important; text-align: left !important;
+  box-shadow: none !important; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.rsp-select:focus, #rangeSelector:focus, #scoreTypeSelector:focus, #scoreRangeSelector:focus {
+  border-color: var(--blue) !important; box-shadow: 0 0 0 3px var(--accent-tint) !important;
+}
+.rsp-select.dropdown-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 128px; }
+.rsp-select.dropdown-toggle::after { color: var(--tx3); }
+.rsp-card .dropdown-menu {
+  background: var(--card-bg); border: 1px solid var(--card-line); border-radius: var(--r-input);
+  box-shadow: var(--shadow-card);
+  padding: 4px; min-width: 168px;
+}
+.rsp-card .dropdown-item {
+  font-size: 13px; letter-spacing: -0.26px; padding: 8px 12px;
+  border-radius: var(--r-badge); color: var(--tx2);
+}
+.rsp-card .dropdown-item:hover { background: var(--inner); color: var(--tx1); }
+.rsp-filter-row { display: flex; gap: 12px; }
+.rsp-filter-row .rsp-select { flex: 1; }
+
+/* ---------- Tests-taken trend chart ---------- */
+.rsp-trend { position: relative; height: 280px; }
+.rsp-trend canvas { width: 100% !important; }
+
+/* ---------- Empty states (shown when a widget has no data for the day) ---------- */
+.rsp-empty {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: var(--card-bg);
+  color: var(--tx3); font-size: 12px; letter-spacing: -0.24px; text-align: center;
+}
+.rsp-empty strong { color: var(--tx2); font-weight: 600; font-size: 13px; letter-spacing: -0.26px; }
+.gender-chart-container { position: relative; min-height: 180px; }
+#employeeTable td[colspan] { padding: 64px 0 !important; color: var(--tx3) !important; font-size: 13px; border-bottom: none !important; }
+
+/* ---------- Donut ---------- */
+#donutCenterText h2 { color: var(--tx1) !important; font-weight: 600 !important; letter-spacing: -0.6px !important; }
+#donutCenterText p, #donutCenterText small { color: var(--tx3) !important; letter-spacing: -0.24px !important; }
+.rsp-legend { display: flex; justify-content: center; gap: 24px; margin-top: 16px; }
+.rsp-legend span {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 500; letter-spacing: -0.24px; color: var(--tx2);
+}
+.rsp-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* ---------- Status dot colors — brand palette on every page ---------- */
+.new-dashboard .circle.good, .circle.good { background: var(--green) !important; }
+.new-dashboard .circle.fair, .circle.fair { background: var(--amber) !important; }
+.new-dashboard .circle.poor, .circle.poor { background: var(--red) !important; }
+
+/* ---------- Test log (template scopes row styles under these classes) ---------- */
+.new-dashboard .card-emp-test-analysis { max-height: none !important; }
+.new-dashboard .card-emp-test-analysis .complete-wrapper { display: block !important; }
+.new-dashboard .card-emp-test-analysis .complete-wrapper .test-log-wrapper {
+  max-height: 404px; overflow-y: auto; padding: 0 8px 0 0 !important;
+}
+.new-dashboard .card-emp-test-analysis .complete-wrapper .test-log-wrapper::-webkit-scrollbar { width: 6px; }
+.new-dashboard .card-emp-test-analysis .complete-wrapper .test-log-wrapper::-webkit-scrollbar-thumb { background: var(--card-line); border-radius: 4px; }
+.new-dashboard .card-emp-test-analysis .complete-wrapper .test-log-wrapper table { margin-top: 0 !important; }
+.new-dashboard .card-emp-test-analysis .complete-wrapper .test-log-wrapper table td {
+  padding: 12px 0 !important; border-bottom: 1px solid var(--card-line);
+}
+.new-dashboard .card-emp-test-analysis .complete-wrapper .test-log-wrapper table tr:last-child td { border-bottom: none; }
+.new-dashboard .card-emp-test-analysis .complete-wrapper .test-log-wrapper table td h3 {
+  color: var(--tx1) !important; font-size: 13px !important; font-weight: 600 !important; letter-spacing: -0.26px !important;
+}
+.new-dashboard .card-emp-test-analysis .complete-wrapper .test-log-wrapper table td p {
+  color: var(--tx3) !important; font-size: 11px !important; letter-spacing: -0.22px !important;
+}
+.new-dashboard .card-emp-test-analysis .complete-wrapper .test-log-wrapper table td .value {
+  color: var(--tx1) !important; letter-spacing: -0.3px !important;
+}
+.clickable-row:hover td { background: var(--inner) !important; }
+
+/* ---------- Gender & age chart ---------- */
+.gender-chart-container { margin-top: 4px; }
+
+/* ---------- Test-log avatars (initial letter, tinted per name) ---------- */
+.rsp-avatar {
+  width: 38px; height: 38px; min-width: 38px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 600; letter-spacing: 0;
+}
+
+/* ---------- "See more" as a quiet ghost button ---------- */
+.rsp-link {
+  padding: 7px 14px; border: 1px solid var(--card-line); border-radius: var(--r-input);
+}
+.rsp-link:hover { background: var(--inner); text-decoration: none; }
+
+/* ---------- Header bar (shared by all pages) ---------- */
+.header, .main-wrapper > .header { background: var(--card-bg) !important; border-bottom: 1px solid var(--card-line); }
+.header .input-group { border: 1px solid var(--card-edge) !important; border-radius: var(--r-input) !important; overflow: visible; background: var(--card-bg) !important; }
+.header .input-group .input-group-text { background: var(--inner) !important; border: none !important; }
+.header .input-group input, .header .input-group #dateInput {
+  border: none !important; box-shadow: none !important; background: var(--card-bg) !important;
+  color: var(--tx1) !important; font-weight: 500 !important; letter-spacing: -0.26px !important;
+}
+.header input::placeholder { color: var(--tx3) !important; }
+/* search box — template styles it at (0,3,1), match that specificity */
+.header .header-left .header-search form input {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-edge) !important;
+  box-shadow: none !important;
+  color: var(--tx1) !important;
+  font-weight: 500 !important; letter-spacing: -0.26px !important;
+}
+.header .header-left .header-search form input:focus {
+  background: var(--card-bg) !important; border-color: var(--blue) !important;
+  box-shadow: 0 0 0 3px var(--accent-tint) !important;
+}
+.header .header-left .header-search form input::-moz-placeholder { color: var(--tx3) !important; font-weight: 400; }
+.header .header-left .header-search form input::placeholder { color: var(--tx3) !important; font-weight: 400; }
+.header .profile-box .info h6, .header #welcome2 { color: var(--tx1) !important; font-weight: 600 !important; letter-spacing: -0.3px !important; }
+.header .profile-box .info p, .header .profile-box .info small { color: var(--tx3) !important; }
+
+/* ---------- Sidebar (shared) ---------- */
+/* dark mode: same logo without the baked-in white capsule */
+.sidebar-nav, .sidebar { background: var(--card-bg) !important; }
+/* the template forces overflow-y:scroll + a hazy shadow — that reads as a
+   permanent scrollbar strip between the menu and the page. Instead: hidden
+   scrollbar + ONE crisp full-height edge line + a tight directional shadow. */
+.sidebar-nav-wrapper {
+  background: var(--card-bg) !important;
+  border-right: 1px solid var(--card-edge) !important;
+  overflow-y: auto !important;
+  box-shadow: 3px 0 10px rgba(50, 65, 90, 0.07) !important;
+  scrollbar-width: none;            /* Firefox */
+}
+.sidebar-nav-wrapper::-webkit-scrollbar { display: none; width: 0; }
+.sidebar-nav .nav-item > a, .sidebar-nav li a, .sidebar a {
+  font-size: 13px; letter-spacing: -0.26px; color: var(--tx2) !important; border-radius: var(--r-input); font-weight: 500;
+}
+.sidebar-nav .nav-item > a.active, .sidebar-nav a.active, .sidebar a.active {
+  background: var(--accent-tint) !important; color: var(--blue) !important; font-weight: 600;
+}
+/* icons follow their link color (the markup hardcodes blue/grey strokes) */
+.sidebar-nav .nav-item a svg path { stroke: currentColor !important; }
+
+/* ---------- Tables & headings on other pages (Test history / Subjects) ---------- */
+.section h1, .section h2, .section h3, .section .title, .section .title h2, .new-dashboard h1 { color: var(--tx1) !important; }
+.new-dashboard table, table.dataTable, .section table { font-size: 13px; letter-spacing: -0.26px; }
+.new-dashboard table thead th, table.dataTable thead th, .section table thead th, .section table th {
+  color: var(--tx3) !important; font-weight: 500; font-size: 11px; letter-spacing: -0.22px; text-transform: none;
+  border-bottom: 1px solid var(--card-line) !important; background: transparent !important;
+}
+.new-dashboard table td, table.dataTable td, .section table td {
+  color: var(--tx2); border-color: var(--card-line) !important; background: transparent;
+}
+.section table td h3, .section table td h2, .section table td strong { color: var(--tx1) !important; }
+.new-dashboard tr.data-row:hover td { background: var(--inner); }
+.new-dashboard .card {
+  background: var(--card-bg); border: 1px solid var(--card-edge); border-radius: var(--r-card); box-shadow: var(--shadow-card);
+}
+
+/* ---------- Test history page: table sits in a proper card ---------- */
+#scoreContainer {
+  background: var(--card-bg); border: 1px solid var(--card-edge);
+  border-radius: var(--r-card); box-shadow: var(--shadow-card);
+  padding: 10px 24px; margin-top: 16px;
+}
+#scoreContainer .table { margin: 0; width: 100%; }
+/* even column grid on desktop: name | tests | 4 scores | actions */
+@media (min-width: 761px) {
+  #scoreContainer .table { table-layout: fixed; }
+  #scoreContainer .table th:nth-child(1) { width: 30%; }
+  #scoreContainer .table th:nth-child(2) { width: 10%; }
+  #scoreContainer .table th:nth-child(3),
+  #scoreContainer .table th:nth-child(4),
+  #scoreContainer .table th:nth-child(5),
+  #scoreContainer .table th:nth-child(6) { width: 12%; }
+  #scoreContainer .table th:nth-child(7) { width: 118px; }
+  #scoreContainer .table th:nth-child(n + 2),
+  #scoreContainer .table td:nth-child(n + 2) { text-align: center; }
+  #scoreContainer .table td:nth-child(7) { white-space: nowrap; }
+}
+#scoreContainer .data-row td { padding: 14px 10px !important; vertical-align: middle; }
+#scoreContainer tbody tr:last-child td { border-bottom: none !important; }
+/* rows here are not clickable — no row hover; the action buttons light up instead */
+.employee-name { font-size: 13.5px !important; font-weight: 600 !important; color: var(--tx1) !important; letter-spacing: -0.27px !important; margin: 0 0 3px !important; }
+.emp_id { display: flex; align-items: center; gap: 8px; color: var(--tx3) !important; font-size: 11px; letter-spacing: -0.22px; }
+.emp_id .dot { width: 4px; height: 4px; border-radius: 50%; background: #c3cddb; }
+#scoreContainer .btn {
+  width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--card-line) !important; border-radius: var(--r-input) !important; padding: 0 !important;
+}
+#scoreContainer .btn:hover { background: var(--blue-light) !important; border-color: var(--blue) !important; }
+.section .title h2 { font-size: 20px !important; letter-spacing: -0.4px !important; font-weight: 600 !important; margin: 4px 0 2px !important; }
+
+/* ---------- Subjects page (.onboarded-subjects — its own section class) ---------- */
+.onboarded-subjects table {
+  background: var(--card-bg); border: 1px solid var(--card-edge) !important;
+  border-radius: var(--r-card); box-shadow: var(--shadow-card);
+  padding: 6px 18px; margin: 24px auto !important;
+  border-collapse: separate !important; border-spacing: 0;
+  overflow: hidden;
+}
+@media (min-width: 761px) {
+  .onboarded-subjects table th { padding: 14px 12px !important; }
+  .onboarded-subjects table td { padding: 13px 12px !important; vertical-align: middle; }
+}
+.onboarded-subjects tbody tr:last-child td { border-bottom: none !important; }
+/* action buttons: square, bordered, light up on hover (rows are not clickable) */
+.onboarded-subjects .td-more { gap: 10px !important; }
+.onboarded-subjects .td-more button, .onboarded-subjects .td-more a {
+  width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--card-line) !important; border-radius: var(--r-input) !important;
+  background: var(--card-bg) !important; padding: 0 !important; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.onboarded-subjects .td-more button:hover, .onboarded-subjects .td-more a:hover {
+  background: var(--blue-light) !important; border-color: var(--blue) !important;
+}
+.onboarded-subjects .td-more i { font-size: 14px; }
+
+/* ---------- Hover hints on action buttons (data-tip attribute) ---------- */
+[data-tip] { position: relative; }
+[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--dark); color: #fff;
+  font-family: var(--font); font-size: 11px; font-weight: 500; letter-spacing: -0.22px;
+  padding: 5px 11px; border-radius: var(--r-badge); white-space: nowrap;
+  z-index: 600; pointer-events: none;
+}
+[data-tip]:hover::before {
+  content: ''; position: absolute; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: var(--dark);
+  z-index: 600; pointer-events: none;
+}
+/* the template's stacked "mobile card" mode is keyed on deprecated device-width
+   queries and can fire on desktops — force the real table at desktop widths */
+@media (min-width: 761px) {
+  .onboarded-subjects table { display: table !important; }
+  .onboarded-subjects thead { display: table-header-group !important; }
+  .onboarded-subjects tbody { display: table-row-group !important; }
+  .onboarded-subjects tr { display: table-row !important; border: none !important; }
+  .onboarded-subjects th, .onboarded-subjects td { display: table-cell !important; }
+  .onboarded-subjects thead tr { position: static !important; }
+  .onboarded-subjects td:before { content: none !important; }
+}
+
+/* ---------- Subjects page base (shared colors) ---------- */
+.onboarded-subjects { background: var(--canvas) !important; font-family: var(--font) !important; }
+.onboarded-subjects .table, .onboarded-subjects table {
+  --bs-table-color: var(--tx2); --bs-table-bg: transparent; --bs-table-border-color: var(--card-line);
+  color: var(--tx2) !important; font-size: 13px; letter-spacing: -0.26px;
+}
+.onboarded-subjects table th {
+  color: var(--tx3) !important; font-weight: 500; font-size: 11px; letter-spacing: -0.22px;
+  background: transparent !important; border-color: var(--card-line) !important;
+}
+.onboarded-subjects table td {
+  color: var(--tx2) !important; background: transparent !important; border-color: var(--card-line) !important;
+}
+.onboarded-subjects tr { border-color: var(--card-line) !important; }
+.onboarded-subjects td:before { color: var(--tx1) !important; font-weight: 600 !important; }
+.onboarded-subjects .error_wrappper h3 { color: var(--tx1); }
+.onboarded-subjects .error_wrappper p { color: var(--tx3); }
+
+/* Bootstrap modal (Edit profile) — dark mode only */
+
+/* ---------- Footer & toast ---------- */
+footer, .footer { background: transparent !important; }
+footer p, .footer p, footer a, .footer a { color: var(--tx3) !important; }
+.custom-toast { background: var(--card-bg) !important; border-color: var(--card-line) !important; color: var(--tx2) !important; }
+
+/* ---------- Date picker: never clipped + mark days that have tests ---------- */
+.datepicker, .datepicker-dropdown { z-index: 3000 !important; }
+.datepicker { font-family: var(--font) !important; padding-top: 6px; }
+.datepicker-picker {
+  background: var(--card-bg) !important; color: var(--tx2);
+  border: 1px solid var(--card-edge);
+  border-radius: 14px !important;
+  box-shadow: 0 2px 6px rgba(37, 37, 37, 0.06), 0 16px 36px rgba(50, 65, 90, 0.16) !important;
+  padding: 10px;
+}
+.datepicker-header, .datepicker-controls, .datepicker-main, .datepicker-view, .datepicker-footer { background: transparent !important; }
+/* month/year title + round arrow buttons */
+.datepicker-controls { padding: 2px 2px 8px; }
+.datepicker-controls .btn, .datepicker-controls button {
+  background: transparent !important; border: none !important; color: var(--tx1) !important;
+  font-family: var(--font) !important; font-size: 14px !important; font-weight: 600 !important;
+  letter-spacing: -0.28px; border-radius: 8px !important;
+}
+.datepicker-controls .btn:hover, .datepicker-controls button:hover { background: var(--inner) !important; }
+.datepicker-controls .prev-btn, .datepicker-controls .next-btn {
+  width: 32px; max-width: 32px; height: 32px; border-radius: 50% !important;
+  color: var(--tx2) !important; font-size: 16px !important; font-weight: 500 !important;
+}
+/* weekday row */
+.datepicker .days-of-week .dow {
+  color: var(--tx3) !important; font-size: 10px !important; font-weight: 600 !important;
+  text-transform: uppercase; letter-spacing: 0.07em; height: 26px; line-height: 26px;
+}
+/* day cells */
+.datepicker-cell { color: var(--tx2); height: 34px !important; line-height: 34px !important; font-size: 12.5px !important; border-radius: 9px !important; }
+.datepicker-cell:not(.disabled):hover { background: var(--inner) !important; }
+.datepicker-cell.disabled { color: var(--text-disabled) !important; opacity: 0.4; }
+/* ONLY this month's dates — hide prev/next-month spillover (grid stays aligned) */
+.datepicker-cell.prev, .datepicker-cell.next { visibility: hidden; pointer-events: none; }
+.datepicker-cell.selected, .datepicker-cell.selected:hover {
+  background: var(--blue) !important; color: #fff !important; font-weight: 600 !important;
+}
+.datepicker-cell.today:not(.selected) {
+  background: transparent !important; box-shadow: inset 0 0 0 1.5px var(--blue);
+  color: var(--blue) !important;
+}
+/* the library "focuses" the same day-of-month in every month you flip to —
+   don't paint that as a highlight; only .selected and .today may stand out */
+.datepicker-cell.focused:not(.selected) { background: transparent !important; }
+.datepicker-cell.focused:not(.disabled):hover { background: var(--inner) !important; }
+.datepicker-cell.day.has-test { font-weight: 600; color: var(--blue) !important; position: relative; }
+.datepicker-cell.day.has-test::after {
+  content: ''; position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 50%; background: var(--green);
+}
+.datepicker-cell.day.has-test.selected, .datepicker-cell.day.has-test:hover { color: #fff !important; }
+.datepicker-cell.day.has-test.selected::after, .datepicker-cell.day.has-test:hover::after { background: #fff; }
+
+/* ---------- View-profile (result) page — section has .new-dashboard ---------- */
+.new-dashboard .icon-card-2 {
+  background: var(--card-bg) !important; border: 1px solid var(--card-edge) !important;
+  border-radius: var(--r-card) !important; box-shadow: var(--shadow-card) !important;
+  padding: 24px !important;
+}
+.new-dashboard .profile-wrapper { text-align: center; }
+.new-dashboard .profile-wrapper .card-header {
+  display: flex; justify-content: flex-start; margin: 0 0 10px; padding: 0; border: none;
+}
+.new-dashboard .profile-wrapper .card-header button {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--card-bg); border: 1px solid var(--card-line); border-radius: var(--r-input);
+  padding: 7px 14px 7px 8px; font-family: var(--font); font-size: 13px; font-weight: 500;
+  color: var(--tx2); letter-spacing: -0.26px; cursor: pointer; transition: background 0.15s;
+}
+.new-dashboard .profile-wrapper .card-header button:hover { background: var(--inner); }
+.new-dashboard .profile-wrapper .card-header button svg { width: 22px; height: 22px; }
+.rsp-avatar--xl { width: 76px; height: 76px; min-width: 76px; font-size: 30px; margin: 8px auto 0; }
+.new-dashboard .profile-wrapper h2 {
+  font-size: 20px !important; font-weight: 600 !important; letter-spacing: -0.4px !important;
+  color: var(--tx1) !important; margin: 12px 0 4px !important;
+}
+.new-dashboard .age-wrapper { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 4px; }
+.new-dashboard .age-wrapper p { color: var(--tx3) !important; font-size: 12.5px !important; letter-spacing: -0.25px; margin: 0 !important; text-transform: capitalize; }
+.new-dashboard .age-wrapper .dot { width: 4px; height: 4px; border-radius: 50%; background: #c3cddb; }
+.new-dashboard .profile-wrapper table { width: 100%; margin-top: 18px; }
+.new-dashboard .profile-wrapper table th {
+  text-align: left; font-size: 12px; font-weight: 500 !important;
+  color: var(--tx3) !important; padding: 11px 0 !important; letter-spacing: -0.24px;
+  border-top: 1px solid var(--track);
+}
+.new-dashboard .profile-wrapper table td {
+  text-align: right; font-size: 13px; font-weight: 600 !important;
+  color: var(--tx1) !important; padding: 11px 0 !important; letter-spacing: -0.26px;
+  border-top: 1px solid var(--track);
+}
+
+/* full-width top strip: title left, score tabs right, cards aligned below */
+.vp-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin: 4px 0 20px;
+}
+.vp-topbar .rsp-pagetitle { margin: 0 !important; }
+.vp-topbar .tab-button-wrapper { margin-top: 0 !important; }
+
+/* segmented score tabs */
+.new-dashboard .tab-button-wrapper {
+  display: inline-flex; gap: 4px; background: var(--inner);
+  border: 1px solid var(--card-line); border-radius: 12px; padding: 4px; margin-top: 14px;
+}
+.new-dashboard .btn_table_score {
+  border: none !important; background: transparent !important;
+  padding: 9px 18px !important; border-radius: 9px !important;
+  font-family: var(--font) !important; font-size: 13px !important; font-weight: 500 !important;
+  letter-spacing: -0.26px !important; color: var(--tx2) !important; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.new-dashboard .btn_table_score.active {
+  background: var(--card-bg) !important; color: var(--blue) !important;
+  font-weight: 600 !important; box-shadow: 0 1px 3px rgba(37, 37, 37, 0.1);
+  border: none !important; border-bottom: none !important; text-decoration: none !important;
+}
+/* template draws the old underline with an ::after bar — not in a segmented control */
+.new-dashboard .tab-button-wrapper .btn_table_score::after { display: none !important; content: none !important; }
+
+/* chart + history layout */
+.new-dashboard .tab-row { gap: 20px; }
+/* one fixed height for all three cards on this page — true symmetry */
+.new-dashboard .row .icon-card-2 { height: 480px; }
+.new-dashboard .table-wrapper { max-height: none !important; overflow-y: auto !important; }
+.new-dashboard .table-wrapper .title-wrapper {
+  position: sticky; top: -25px; z-index: 2;
+  background: var(--card-bg); padding: 4px 0 10px; margin-top: -4px;
+}
+.new-dashboard .table-wrapper::-webkit-scrollbar { width: 6px; }
+.new-dashboard .table-wrapper .title-wrapper h3 {
+  font-size: 16px !important; font-weight: 600 !important; letter-spacing: -0.32px !important;
+  color: var(--tx1) !important; margin: 0 0 4px !important;
+}
+.new-dashboard #scoreTable { width: 100%; }
+.new-dashboard #scoreTable tr { cursor: pointer; }
+.new-dashboard #scoreTable tr:hover th, .new-dashboard #scoreTable tr:hover td { background: var(--inner); }
+.new-dashboard #scoreTable th, .new-dashboard #scoreTable td {
+  border-bottom: 1px solid var(--track); padding: 12px 6px !important; vertical-align: middle;
+}
+.new-dashboard #scoreTable tr:last-child th, .new-dashboard #scoreTable tr:last-child td { border-bottom: none; }
+.new-dashboard #scoreTable th {
+  text-align: left; font-size: 12px !important; font-weight: 500 !important;
+  color: var(--tx3) !important; letter-spacing: -0.24px !important;
+}
+.new-dashboard #scoreTable th .th-date {
+  display: block; white-space: nowrap; font-size: 12px;
+  color: var(--tx3); letter-spacing: -0.24px; line-height: 1.3;
+}
+.new-dashboard #scoreTable .score { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.new-dashboard #scoreTable .score .value {
+  font-size: 16px !important; font-weight: 600 !important; color: var(--tx1) !important;
+  letter-spacing: -0.32px !important; margin: 0 !important; min-width: 0 !important;
+}
+.new-dashboard #scoreTable .score p {
+  margin: 0 !important; font-size: 11px !important; font-weight: 600 !important;
+  padding: 2px 10px; border-radius: var(--r-pill); letter-spacing: -0.22px !important;
+}
+.new-dashboard #scoreTable .text-good { color: var(--green) !important; background: var(--green-light); }
+.new-dashboard #scoreTable .text-fair { color: #a97b00 !important; background: #fff5dc; }
+.new-dashboard #scoreTable .text-poor { color: var(--red) !important; background: #fdecea; }
+.new-dashboard #scoreTable td { text-align: right; }
+.new-dashboard #scoreTable td p {
+  display: inline-block; margin: 0 !important; font-size: 11.5px !important;
+  color: var(--tx2) !important; background: var(--inner); border: 1px solid var(--card-line);
+  padding: 4px 11px; border-radius: var(--r-pill); letter-spacing: -0.23px !important; white-space: nowrap;
+}
+
+/* ---------- Modals (Edit profile / Confirm delete / Change password) ---------- */
+/* vertically center every dialog (same as bootstrap's .modal-dialog-centered) */
+.modal-dialog { display: flex; align-items: center; min-height: calc(100% - 3.5rem); }
+.modal-content {
+  border: 1px solid var(--card-edge) !important; border-radius: var(--r-card) !important;
+  box-shadow: 0 2px 6px rgba(37, 37, 37, 0.06), 0 24px 48px rgba(50, 65, 90, 0.18);
+  font-family: var(--font);
+}
+.modal-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--card-line) !important; }
+.modal-title { font-size: 17px !important; font-weight: 600 !important; letter-spacing: -0.34px !important; color: var(--tx1) !important; }
+.modal-body { padding: 20px 24px; }
+.modal-footer { padding: 14px 24px 18px; border-top: 1px solid var(--card-line) !important; gap: 10px; }
+.modal .form-label { font-size: 12px !important; font-weight: 500 !important; color: var(--tx2) !important; letter-spacing: -0.24px; margin-bottom: 6px; }
+.modal .form-control, .modal .form-select {
+  border: 1px solid var(--card-line) !important; border-radius: var(--r-input) !important;
+  font-family: var(--font) !important; font-size: 13px !important; letter-spacing: -0.26px;
+  color: var(--tx1) !important; min-height: 42px; box-shadow: none !important;
+}
+.modal .form-control:focus, .modal .form-select:focus {
+  border-color: var(--blue) !important; box-shadow: 0 0 0 3px var(--blue-light) !important;
+}
+.modal .form-control:disabled, .modal .form-select:disabled { background: var(--inner) !important; color: var(--tx3) !important; }
+.modal .input-group .input-group-text { border: 1px solid var(--card-line) !important; border-left: none !important; border-radius: 0 var(--r-input) var(--r-input) 0 !important; }
+.modal .form-text { font-size: 11px; color: var(--text-disabled) !important; }
+.modal .btn-secondary {
+  background: var(--card-bg) !important; color: var(--tx2) !important; border: 1px solid var(--card-line) !important;
+  border-radius: var(--r-input) !important; font-family: var(--font) !important;
+  font-size: 13px !important; font-weight: 500 !important; letter-spacing: -0.26px; padding: 9px 16px;
+}
+.modal .btn-secondary:hover { background: var(--inner) !important; color: var(--tx1) !important; }
+.modal .btn-danger {
+  background: var(--red) !important; border: none !important; border-radius: var(--r-input) !important;
+  font-family: var(--font) !important; font-size: 13px !important; font-weight: 600 !important;
+  letter-spacing: -0.26px; padding: 9px 16px;
+}
+.modal .btn-danger:hover { background: #cf3d2e !important; }
+.rsp-form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rsp-form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 16px; }
+.rsp-form-hint { font-size: 11.5px; color: var(--text-disabled) !important; margin: 8px 0 0; display: flex; align-items: center; gap: 6px; }
+.rsp-form-hint i { font-size: 10px; }
+@media (max-width: 575px) { .rsp-form-grid-2, .rsp-form-grid-3 { grid-template-columns: 1fr; } }
+#confirmDeleteModal .modal-body { font-size: 13.5px; color: var(--tx2); letter-spacing: -0.27px; }
+#confirmDeleteModal .modal-body strong { color: var(--tx1); }
+#confirmDeleteModal .modal-body p { font-size: 12px; color: var(--tx3); margin: 6px 0 0; }
+
+/* ---------- Pagination ---------- */
+.rsp-pager {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin: 16px 2px 4px;
+  font-family: var(--font);
+}
+.rsp-pager-info { font-size: 12.5px; color: var(--tx3); letter-spacing: -0.25px; }
+.rsp-pager-controls { display: flex; align-items: center; gap: 10px; }
+.rsp-pager-page { font-size: 12.5px; font-weight: 500; color: var(--tx2); letter-spacing: -0.25px; white-space: nowrap; }
+.rsp-page-btn {
+  width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--card-line); border-radius: var(--r-input);
+  background: var(--card-bg); color: var(--tx2); font-size: 12px; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.rsp-page-btn:hover:not(:disabled) { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
+.rsp-page-btn:disabled { opacity: 0.4; cursor: default; }
+.onboarded-subjects .rsp-pager { margin: -8px 2px 24px; }
+
+/* ---------- Admin profile page ---------- */
+.admin-profile .rsp-idcard {
+  display: flex !important; flex-direction: column !important;
+  align-items: center !important; justify-content: center !important; text-align: center;
+}
+.rsp-idcard-name {
+  font-size: 20px !important; font-weight: 600 !important; letter-spacing: -0.4px !important;
+  color: var(--tx1) !important; margin: 14px 0 4px !important;
+}
+.rsp-idcard-loc { color: var(--tx3) !important; font-size: 12.5px !important; letter-spacing: -0.25px; margin: 0 0 14px !important; }
+.rsp-idcard-loc i { margin-right: 5px; font-size: 11px; }
+.rsp-role-badge {
+  background: var(--accent-tint); color: var(--blue);
+  font-size: 11px; font-weight: 500; letter-spacing: -0.22px;
+  padding: 4px 14px; border-radius: var(--r-pill);
+}
+.rsp-inforow { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; }
+.rsp-inforow + .rsp-inforow { border-top: 1px solid var(--track); }
+.rsp-inforow-ico {
+  width: 38px; min-width: 38px; height: 38px; border-radius: 10px;
+  background: var(--inner); color: var(--tx3);
+  display: inline-flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.rsp-inforow-lbl { font-size: 12px !important; color: var(--tx3) !important; letter-spacing: -0.24px; margin: 1px 0 3px !important; }
+.rsp-inforow-hint { font-size: 11px; color: var(--text-disabled); }
+.rsp-inforow-val { font-size: 13.5px !important; font-weight: 600 !important; color: var(--tx1) !important; letter-spacing: -0.27px; margin: 0 !important; word-break: break-all; }
+.rsp-report-logo {
+  max-width: 150px; max-height: 64px; margin-top: 6px;
+  border: 1px solid var(--card-line); border-radius: 10px; padding: 6px; background: #fff;
+}
+.rsp-logo-empty { color: var(--tx3) !important; font-weight: 400 !important; }
+.rsp-profile-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+/* design-system primary CTA: dark, 15px radius */
+.rsp-btn-dark {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--dark); color: #fff; border: none; border-radius: var(--r-card);
+  padding: 0 20px; height: 44px; cursor: pointer;
+  font-family: var(--font); font-size: 13px; font-weight: 600; letter-spacing: -0.26px;
+  box-shadow: 0 4px 12px rgba(37, 37, 37, 0.25);
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+.rsp-btn-dark:hover { background: #3a3a3a; box-shadow: 0 6px 16px rgba(37, 37, 37, 0.32); transform: translateY(-1px); }
+.rsp-btn-dark:active { transform: translateY(0); }
+.rsp-btn-dark:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.rsp-btn-danger-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--card-bg); color: var(--red); border: 1px solid var(--card-line); border-radius: var(--r-card);
+  padding: 0 20px; height: 44px; cursor: pointer;
+  font-family: var(--font); font-size: 13px; font-weight: 600; letter-spacing: -0.26px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.rsp-btn-danger-ghost:hover { background: #fdecea; border-color: var(--red); }
+
+/* ---------- Sidebar menu label + page scrollbars ---------- */
+.rsp-menulabel {
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
+  color: #a9b3c4; margin: 2px 0 8px 25px;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--card-edge); border-radius: 8px;
+  border: 2px solid transparent; background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: #aebbcd; }
+
+/* profile chip hover in header */
+.header .profile-box > button { border-radius: 10px; padding: 5px 10px; transition: background 0.15s; }
+.header .profile-box > button:hover { background: var(--inner); }
+
+/* ===========================================================================
+   v37 — VISUAL REFRESH. Softer depth, frosted header with floating pill
+   controls, bolder sidebar, richer KPI cards, chip-style filters/legends.
+   Everything stays on the semantic vars so the dark theme keeps working.
+   =========================================================================== */
+:root {
+  --edge-soft:    #dbe4f0;                                      /* quieter card outline */
+  --shadow-rest:  0 1px 2px rgba(50,65,90,0.05), 0 10px 28px rgba(50,65,90,0.08);
+  --shadow-lift:  0 2px 6px rgba(50,65,90,0.07), 0 22px 44px rgba(50,65,90,0.14);
+  --shadow-pill:  0 1px 2px rgba(50,65,90,0.05), 0 4px 12px rgba(50,65,90,0.07);
+}
+
+/* ---- cards: quieter edge, airier resting shadow, no hard head divider ---- */
+.new-dashboard .rsp-card {
+  border-color: var(--edge-soft) !important;
+  box-shadow: var(--shadow-rest) !important;
+}
+.new-dashboard .rsp-card:hover { box-shadow: var(--shadow-lift) !important; }
+.rsp-card-head { border-bottom: none; padding-bottom: 6px; margin-bottom: 12px; }
+
+/* ---- header: frosted strip over the canvas, controls float as pills ---- */
+.header, .main-wrapper > .header {
+  background: var(--canvas) !important;
+  background: color-mix(in srgb, var(--canvas) 82%, transparent) !important;
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+.header .input-group {
+  border: 1px solid var(--edge-soft) !important; border-radius: 12px !important;
+  box-shadow: var(--shadow-pill); height: 44px; align-items: center;
+}
+.header .input-group .input-group-text { background: transparent !important; color: var(--blue) !important; }
+.header .header-left .header-search form input {
+  border: 1px solid var(--edge-soft) !important; border-radius: 12px !important;
+  box-shadow: var(--shadow-pill) !important; height: 44px;
+}
+.header .profile-box > button {
+  background: var(--card-bg) !important; border: 1px solid var(--edge-soft) !important;
+  border-radius: 12px; padding: 5px 12px 5px 6px; box-shadow: var(--shadow-pill);
+}
+.header .profile-box > button:hover { background: var(--inner) !important; }
+.header .profile-box .info p {
+  background: var(--accent-tint); color: var(--blue) !important;
+  font-size: 10px !important; font-weight: 500 !important; letter-spacing: -0.2px !important;
+  padding: 2px 8px; border-radius: var(--r-badge); display: inline-block; line-height: 1.5;
+}
+.menu-toggle-btn .main-btn { border-radius: 12px !important; box-shadow: var(--shadow-pill) !important; }
+
+/* ---- sidebar: solid-blue active pill, roomier items ---- */
+.sidebar-nav-wrapper { border-right: 1px solid var(--edge-soft) !important; box-shadow: none !important; }
+.sidebar-nav .nav-item > a {
+  display: flex !important; align-items: center; gap: 12px;
+  width: auto !important; /* template forces 100%, which overflows past the side margins */
+  margin: 3px 12px; padding: 11px 14px !important; border-radius: 12px !important;
+  transition: background 0.15s, color 0.15s;
+}
+.sidebar-nav .nav-item > a:hover { background: var(--inner) !important; color: var(--tx1) !important; }
+.sidebar-nav .nav-item > a.active {
+  background: var(--blue) !important; color: #fff !important;
+  box-shadow: 0 6px 16px rgba(48,139,249,0.35);
+}
+.sidebar-nav .nav-item > a.active svg path { stroke: #fff !important; }
+.rsp-menulabel { margin-left: 28px; }
+
+/* ---- page heading: a touch more presence ---- */
+.rsp-pagetitle { font-size: 22px !important; letter-spacing: -0.44px !important; }
+.rsp-pagehead { margin: 4px 0 22px; }
+
+/* (KPI card styling lives in the KPI section above — v39 stat-card layout) */
+
+/* ---- filters & dropdowns read as chips, not form fields ---- */
+.rsp-select, #rangeSelector, #scoreTypeSelector, #scoreRangeSelector {
+  background: var(--inner) !important; border-color: transparent !important;
+  border-radius: 10px !important; font-weight: 500 !important;
+  transition: border-color 0.15s, background 0.15s;
+}
+.rsp-select:hover, #rangeSelector:hover, #scoreTypeSelector:hover, #scoreRangeSelector:hover {
+  border-color: var(--edge-soft) !important;
+}
+
+/* ---- donut legend as soft chips ---- */
+.rsp-legend { gap: 10px; }
+.rsp-legend span { background: var(--inner); padding: 6px 14px; border-radius: var(--r-pill); }
+
+/* ---- "See more" becomes a tinted pill button ---- */
+.rsp-link {
+  background: var(--accent-tint); border-color: transparent;
+  border-radius: var(--r-pill); padding: 8px 16px;
+  transition: background 0.15s, color 0.15s;
+}
+.rsp-link:hover { background: var(--blue); color: #fff !important; text-decoration: none; }
+
+/* ---- test log: score reads as a status pill ---- */
+.test-log-wrapper .score {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--inner); padding: 5px 13px; border-radius: var(--r-pill);
+}
+.test-log-wrapper .score:has(.circle.good) { background: var(--green-light); }
+.test-log-wrapper .score:has(.circle.good) .value { color: var(--green) !important; }
+.test-log-wrapper .score:has(.circle.fair) { background: #fff7e2; }
+.test-log-wrapper .score:has(.circle.fair) .value { color: #c98f00 !important; }
+.test-log-wrapper .score:has(.circle.poor) { background: #fdecea; }
+.test-log-wrapper .score:has(.circle.poor) .value { color: var(--red) !important; }
+.test-log-wrapper .score .circle { width: 7px !important; height: 7px !important; }
+.test-log-wrapper .score .value { font-size: 13px !important; font-weight: 600 !important; }
+.test-log-wrapper .score-ppm { margin-top: 6px !important; }
+
+/* ---- empty states get a quiet glyph above the text ---- */
+.rsp-empty::before {
+  font-family: "Font Awesome 6 Free"; font-weight: 900; content: "\f080";
+  font-size: 18px; color: var(--card-edge); margin-bottom: 2px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1399px) {
+  .rsp-kpi-value { font-size: 29px !important; }
+}
+
+/* ---------- Header pinch-proofing (all widths): the calendar group keeps its
+   one line no matter what; when space runs short the search input gives way ---------- */
+.header .header-left .input-group { flex-wrap: nowrap; flex: 0 0 auto; }
+.header .header-left .header-search { min-width: 0; flex: 0 1 auto; }
+.header .header-left .header-search form { min-width: 0; }
+.header .header-left .header-search form input { min-width: 96px; }
+
+/* smaller desktops: card sizes stay as approved (7/5 row below 1400, stock 8/4
+   above). The donut card's head instead fits its longest dropdown label
+   ("Respiratory score") by slimming the TEXT: smaller title, decorative icon
+   hidden, compact dropdown — everything stays on one line. */
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .new-dashboard .col-xl-8 { width: 58.3333%; }
+  .new-dashboard .col-xl-4.col-12:not(.col-md-4) { width: 41.6667%; }
+}
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .rsp-card-head { gap: 8px; }
+  .rsp-card-title { font-size: 16px !important; }
+  .rsp-card-head .rsp-ti { display: none; }
+  .rsp-card-head .rsp-select, .rsp-card-head select {
+    font-size: 12.5px !important; padding: 0 10px !important;
+    height: 38px; min-height: 38px;
+  }
+  .rsp-card-head .rsp-select.dropdown-toggle { min-width: 0; }
+}
+
+/* ---------- Slide-in menu: the sidebar hides below 1200px, so the hamburger
+   must be reachable on that whole range (the stock template only showed it
+   under 600px, leaving 600-1199px with no way to change pages) ---------- */
+@media (max-width: 1199px) {
+  .menu-toggle-btn { display: block; }
+  .header .header-left .menu-toggle-btn .main-btn { padding: 10px 13px; border-radius: 10px; }
+  .menu-toggle-btn .main-btn i { font-size: 16px; line-height: 1; }
+  /* dim the page while the menu is open; main.js closes it on backdrop tap */
+  .main-wrapper.active::before {
+    content: ""; position: fixed; inset: 0;
+    background: rgba(37, 37, 37, 0.45); z-index: 998;
+  }
+  /* drawer close button: round ghost chip, top-right */
+  #close.close {
+    width: 32px; height: 32px; border-radius: 50%; border: none;
+    background: var(--inner, #f0f4f9); color: var(--tx2, #535359);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; cursor: pointer;
+  }
+  #close.close:hover { background: #e4ebf3; color: var(--tx1, #252525); }
+}
+
+@media (max-width: 991px) {
+  /* nothing may force the page wider than the phone */
+  html, body { max-width: 100%; overflow-x: hidden; }
+  /* flex columns must be allowed to shrink below their content width,
+     or a wide table/chart drags the whole row past the viewport */
+  .new-dashboard .row > *, .section .row > *, .admin-profile .row > * { min-width: 0; }
+  /* header: avatar only, no welcome text (keep .image — it IS the avatar) */
+  .header .profile-info .info > div:not(.image) { display: none; }
+  /* header becomes two rows: [menu][date] … [avatar], search full-width below
+     (the stock 50/50 columns left too little room for one row) */
+  .header .container-fluid { padding: 8px 12px !important; }
+  .header .row { flex-wrap: nowrap; align-items: center; }
+  .header .row > div:first-child { flex: 1 1 auto; width: auto; max-width: none; }
+  .header .row > div:last-child { flex: 0 0 auto; width: auto; max-width: none; }
+  .header .header-left { gap: 10px !important; flex-wrap: wrap; }
+  .header .header-left .header-search { flex: 1 1 100%; }
+  .header .header-left .header-search form { max-width: none !important; width: 100%; }
+  .header .header-left .header-search form input { width: 100% !important; }
+  .header .input-group #dateInput { width: 7.6rem; font-size: 12.5px; }
+  /* profile page: tabs scroll sideways instead of overflowing */
+  .vp-topbar { gap: 10px; }
+  .vp-topbar .tab-button-wrapper { max-width: 100%; overflow-x: auto; }
+  .new-dashboard .btn_table_score { padding: 8px 12px !important; font-size: 12px !important; white-space: nowrap; }
+  /* profile page: chart and history stack, heights go natural */
+  .tab-content-wrapper .tab-row { grid-template-columns: 1fr !important; }
+  .new-dashboard .row .icon-card-2 { height: auto; }
+  .scorechart-chart-wrapper { height: 340px !important; }
+  .new-dashboard .table-wrapper { max-height: 420px !important; }
+}
+
+@media (max-width: 767px) {
+  .new-dashboard .container-fluid { padding: 14px 14px 24px; }
+  .rsp-trend { height: 228px; }
+  .new-dashboard .rsp-card { padding: 18px 16px !important; }
+  .rsp-card-title { white-space: normal; }
+  .rsp-pagehead { margin-bottom: 14px; }
+  .rsp-pagetitle { font-size: 18px !important; }
+  /* phone: slightly smaller date + search text (layout comes from the 991 block) */
+  .header .input-group #dateInput { width: 7.2rem !important; font-size: 12.5px !important; }
+  .header .header-left .header-search form input { padding: 9px 8px 9px 38px !important; font-size: 12px !important; }
+  /* admin profile: full-width action buttons */
+  .rsp-profile-actions { flex-direction: column; }
+  .rsp-btn-dark, .rsp-btn-danger-ghost { width: 100%; justify-content: center; }
+}
+
+/* ---------- Phone tables: clean label/value rows ---------- */
+@media (max-width: 760px) {
+  /* Test history */
+  #scoreContainer { padding: 6px 14px; max-width: 100%; }
+  #scoreContainer .table, #scoreContainer .table tbody { display: block; width: 100%; }
+  #scoreContainer .table { table-layout: auto; }
+  #scoreContainer .table thead { display: none; }
+  #scoreContainer .table td { min-width: 0; overflow-wrap: anywhere; }
+  #scoreContainer .table tr.data-row { display: block; padding: 5px 0 9px; border-bottom: 1px solid var(--card-line); }
+  #scoreContainer .table tr.data-row:last-child { border-bottom: none; }
+  #scoreContainer .table td {
+    display: flex !important; justify-content: space-between; align-items: center; gap: 12px;
+    width: auto !important; padding: 7px 0 !important; border: none !important;
+    text-align: right !important; position: static !important;
+  }
+  #scoreContainer .table td::before {
+    content: attr(data-label);
+    position: static !important; width: auto !important; padding: 0 !important; left: auto !important;
+    text-transform: uppercase; font-size: 10px !important; letter-spacing: 0.05em;
+    color: var(--tx3) !important; font-weight: 600 !important; text-align: left; flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  #scoreContainer .table td:last-child::before { content: "Actions"; }
+  #scoreContainer .emplyee-name-wrapper { text-align: right; }
+  #scoreContainer .emp_id { justify-content: flex-end; flex-wrap: wrap; }
+
+  /* Subjects */
+  .onboarded-subjects table { padding: 6px 14px; }
+  .onboarded-subjects thead { display: none; }
+  .onboarded-subjects tr {
+    display: block; border: none !important;
+    border-bottom: 1px solid var(--card-line) !important; padding: 5px 0 9px;
+  }
+  .onboarded-subjects tbody tr:last-child { border-bottom: none !important; }
+  .onboarded-subjects td {
+    display: flex !important; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 7px 0 !important; border: none !important; text-align: right;
+  }
+  .onboarded-subjects td:before {
+    position: static !important; width: auto !important; padding: 0 !important;
+    content: attr(data-column) !important;
+    text-transform: uppercase; font-size: 10px !important; letter-spacing: 0.05em;
+    color: var(--tx3) !important; font-weight: 600 !important; text-align: left; flex: 0 0 auto;
+  }
+  /* search works server-side on these pages — the stock template hid the
+     form under 600px, but on phones it is the main way to find a subject */
+  .header .header-left .header-search form { display: block; }
+}
+
+/* ===========================================================================
+   v38 — HEADER REDESIGN (.rsp-hd). New markup in pages/header*.php:
+   greeting on the left, one tool cluster (search / date / profile) on the
+   right. Appended last so it beats every earlier .header rule.
+   =========================================================================== */
+.header.rsp-hd {
+  position: sticky; top: 0; z-index: 99;
+  background: var(--card-bg) !important;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  border-bottom: 1px solid var(--edge-soft) !important;
+  box-shadow: 0 1px 2px rgba(50, 65, 90, 0.04) !important;
+  padding: 0 !important;
+}
+.rsp-hd-in { display: flex; align-items: center; gap: 16px; padding: 13px 28px; }
+
+/* burger — quiet ghost square (shown only when the sidebar is hidden) */
+.rsp-hd-burger {
+  width: 42px; height: 42px; border: 1px solid var(--edge-soft); border-radius: 12px;
+  background: var(--card-bg); color: var(--tx2); font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: background 0.15s, color 0.15s;
+}
+.rsp-hd-burger:hover { background: var(--inner); color: var(--tx1); }
+
+/* greeting */
+.rsp-hd-greet { margin-right: auto; min-width: 0; white-space: nowrap; }
+.rsp-hd-greet h6 {
+  margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.3px; color: var(--tx1);
+  overflow: hidden; text-overflow: ellipsis;
+}
+.rsp-hd-greet p { margin: 2px 0 0; font-size: 11.5px; letter-spacing: -0.23px; color: var(--tx3); }
+
+/* tool cluster */
+.rsp-hd-tools { display: flex; align-items: center; gap: 12px; }
+.rsp-hd-sep { width: 1px; height: 26px; background: var(--card-line); }
+
+/* search — soft inset pill that lights up on focus */
+.rsp-hd-search form { position: relative; margin: 0; }
+.rsp-hd-search form i {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--tx3); font-size: 12.5px; pointer-events: none;
+}
+.rsp-hd-search input {
+  width: 230px; height: 42px; border: 1px solid transparent; border-radius: 12px;
+  background: var(--inner) !important; color: var(--tx1) !important;
+  padding: 0 14px 0 38px; font-family: var(--font); font-size: 12.5px; font-weight: 500;
+  letter-spacing: -0.25px; outline: none; box-shadow: none !important;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.rsp-hd-search input::placeholder { color: var(--tx3); font-weight: 400; }
+.rsp-hd-search input:focus {
+  background: var(--card-bg) !important; border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--accent-tint) !important;
+}
+
+/* date control — white pill, tinted calendar chip, borderless input */
+.rsp-hd .input-group.rsp-hd-date {
+  background: var(--card-bg) !important; border: 1px solid var(--edge-soft) !important;
+  border-radius: 12px !important; height: 42px; width: auto; flex-wrap: nowrap;
+  align-items: center; overflow: visible; box-shadow: none;
+}
+.rsp-hd-date .input-group-text {
+  background: var(--accent-tint) !important; color: var(--blue) !important; border: none !important;
+  width: 30px; height: 30px; border-radius: 9px; margin-left: 6px; padding: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 12.5px;
+}
+.rsp-hd-date #dateInput {
+  border: none !important; background: transparent !important; box-shadow: none !important;
+  width: 7.4rem !important; height: auto !important; padding: 0 12px !important;
+  font-family: var(--font) !important; font-size: 13px !important; font-weight: 500 !important;
+  letter-spacing: -0.26px !important; color: var(--tx1) !important;
+}
+
+/* profile — avatar + name/role + chevron, borderless, tint on hover */
+.rsp-hd .profile-box > button.rsp-hd-user {
+  display: flex; align-items: center; gap: 10px;
+  background: transparent !important; border: none !important; box-shadow: none !important;
+  padding: 5px 8px !important; border-radius: 12px; cursor: pointer; transition: background 0.15s;
+}
+.rsp-hd .profile-box > button.rsp-hd-user:hover { background: var(--inner) !important; }
+.rsp-hd-ava { width: 38px; height: 38px; border-radius: 11px; object-fit: cover; display: block; }
+.rsp-hd-user-txt { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3; }
+.rsp-hd-user-txt strong { font-size: 13px; font-weight: 600; letter-spacing: -0.26px; color: var(--tx1); }
+.rsp-hd-user-txt small { font-size: 10.5px; letter-spacing: -0.2px; color: var(--tx3); }
+.rsp-hd-chev { font-size: 10px; color: var(--tx3); margin-left: 2px; }
+
+/* profile dropdown */
+.rsp-hd .dropdown-menu {
+  background: var(--card-bg); border: 1px solid var(--edge-soft); border-radius: 14px;
+  box-shadow: var(--shadow-lift); padding: 6px; min-width: 185px; margin-top: 8px !important;
+}
+.rsp-hd .dropdown-menu a {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px;
+  font-family: var(--font); font-size: 12.5px; font-weight: 500; letter-spacing: -0.25px;
+  color: var(--tx2) !important; text-decoration: none;
+}
+.rsp-hd .dropdown-menu a:hover { background: var(--inner); color: var(--tx1) !important; }
+.rsp-hd .dropdown-menu a i { color: var(--tx3); width: 15px; text-align: center; }
+
+/* ---- header responsive ---- */
+@media (max-width: 991px) {
+  .rsp-hd-in { flex-wrap: wrap; row-gap: 10px; padding: 12px 16px; }
+  .rsp-hd-tools { order: 5; flex: 1 1 100%; }
+  .rsp-hd-search { flex: 1; }
+  .rsp-hd-search form { width: 100%; }
+  .rsp-hd-search input { width: 100%; }
+  .rsp-hd-sep { display: none; }
+}
+@media (max-width: 600px) {
+  .rsp-hd-greet p { display: none; }
+  .rsp-hd-greet h6 { font-size: 14px; }
+  .rsp-hd-user-txt, .rsp-hd-chev { display: none; }
+  .rsp-hd .profile-box > button.rsp-hd-user { padding: 4px !important; }
+  .rsp-hd-date #dateInput { width: 6.8rem !important; font-size: 12.5px !important; }
+}
+
+/* ===========================================================================
+   v44 — chart card mirrors the KPI-card anatomy (label / control / hero total)
+   and all in-card selects take the same outlined-badge look as the KPI badges.
+   =========================================================================== */
+.rsp-chartcard .rsp-kpi-top { margin-bottom: 8px; }
+.rsp-chartcard .rsp-kpi-value { color: var(--blue) !important; font-size: 26px !important; letter-spacing: -0.7px !important; margin: 0 0 18px !important; }
+.rsp-chartcard .rsp-kpi-frac { font-size: 12.5px; margin-left: 6px; }
+
+.rsp-select, #rangeSelector, #scoreTypeSelector, #scoreRangeSelector {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-line) !important;
+  border-radius: var(--r-input) !important;
+  height: 34px; min-height: 34px; padding: 0 10px !important;
+  font-size: 11.5px !important; font-weight: 600 !important;
+  color: var(--tx2) !important;
+}
+.rsp-select:hover, #rangeSelector:hover, #scoreTypeSelector:hover, #scoreRangeSelector:hover {
+  border-color: var(--edge-soft) !important; background: var(--inner) !important;
+}
+
+/* v45 — remaining dashboard cards share the KPI header language */
+.rsp-kpi-ctx { color: var(--blue); font-weight: 500; font-size: 11px; letter-spacing: -0.22px; }
+.rsp-kpi-top .rsp-link {
+  background: var(--card-bg); border: 1px solid var(--card-line); color: var(--tx2) !important;
+  border-radius: var(--r-input); padding: 7px 12px; font-size: 11.5px; font-weight: 600;
+}
+.rsp-kpi-top .rsp-link:hover { background: var(--inner); color: var(--tx1) !important; text-decoration: none; }
+.rsp-kpi-top .dropdown { flex: 0 0 auto; margin-left: auto; }
+.rsp-filter-row { display: flex; gap: 10px; margin-top: 4px; }
+
+/* ===========================================================================
+   v58 — charts keep explicit container heights (their aspect-ratio lock is
+   off so they fill these boxes; the page scrolls normally).
+   =========================================================================== */
+.gender-chart-container { position: relative; height: 230px; }
+
+/* v60 — date control: the calendar ICON only opens the dropdown (no focus,
+   no caret, nothing lifts). Clicking the DATE TEXT focuses it: just the text
+   lifts slightly, the dropdown opens, and the caret appears after the lift
+   (JS adds .caret-on). The pill itself never acts like a button. */
+.rsp-hd-date #dateInput { transition: transform 0.18s ease; caret-color: transparent; }
+.rsp-hd-date #dateInput:focus { transform: translateY(-2px) !important; }
+.rsp-hd-date.caret-on #dateInput { caret-color: var(--tx1); }
+/* opened from the icon: the picker focuses the input internally, but nothing
+   may move and no caret may show */
+.rsp-hd-date.icon-open #dateInput:focus { transform: none !important; }
+
+/* ===========================================================================
+   v63 — ONE-SCREEN DASHBOARD (inspired by the one-screen spec, adapted:
+   sidebar + premium header stay; the content area becomes day strip →
+   KPI row → analysis row). Desktop ≥1200px and ≥680px tall locks the page;
+   anything smaller falls back to normal scrolling and stacked cards.
+   =========================================================================== */
+
+/* ---- day strip ---- */
+.rsp2-daybar { display:flex; align-items:center; gap:14px; padding:10px 18px !important; }
+.rsp2-daylabel { flex-shrink:0; min-width:120px; }
+.rsp2-daylabel .t { font-size:13px; font-weight:600; letter-spacing:-0.26px; color:var(--tx1); }
+.rsp2-daylabel .s { font-size:10px; color:var(--tx3); letter-spacing:-0.2px; }
+.rsp2-strip { flex:1; display:grid; grid-template-columns:repeat(14,1fr); gap:2px; min-width:0; }
+.rsp2-day {
+  border:none; background:transparent; border-radius:12px; font-family:var(--font);
+  cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:2px 0 4px; position:relative;
+}
+.rsp2-day .w { font-size:8.5px; font-weight:500; color:var(--text-disabled); text-transform:uppercase; letter-spacing:0.4px; }
+.rsp2-day .d {
+  width:30px; height:30px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:600; color:var(--tx2); letter-spacing:-0.24px;
+  transition:background 0.15s, color 0.15s;
+}
+.rsp2-day .dot { width:4px; height:4px; border-radius:50%; background:transparent; }
+.rsp2-day.has .dot { background:var(--green); }
+.rsp2-day:hover .d { background:var(--accent-tint); color:var(--blue); }
+.rsp2-day.sel .w { color:var(--blue); font-weight:600; }
+.rsp2-day.sel .d { background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(48,139,249,0.4); }
+.rsp2-day.sel .dot { background:var(--blue); }
+.rsp2-daycount {
+  position:absolute; top:8px; right:calc(50% - 24px);
+  background:var(--green); color:#fff; font-size:8.5px; font-weight:600;
+  border-radius:var(--r-pill); padding:1px 6px; border:2px solid var(--card-bg);
+}
+.rsp2-monthbtn {
+  flex-shrink:0; display:flex; align-items:center; gap:8px; position:relative;
+  height:36px; background:var(--inner); border:1px solid var(--card-line);
+  border-radius:10px; padding:0 12px; font-family:var(--font);
+  font-size:11.5px; font-weight:600; letter-spacing:-0.22px; color:var(--tx2); cursor:pointer;
+}
+.rsp2-monthbtn:hover { border-color:var(--edge-soft); background:var(--card-bg); }
+.rsp2-monthbtn i { color:var(--blue); font-size:12.5px; }
+.rsp2-dateinput { position:absolute; left:0; bottom:0; width:1px; height:1px; opacity:0; border:0; padding:0; pointer-events:none; }
+
+/* ---- KPI row ---- */
+.rsp2-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.rsp2-kpi { padding:13px 18px !important; min-width:0; }
+.rsp2-kpi .rsp-kpi-label { font-size:12.5px !important; }
+.rsp2-kpi .rsp-kpi-value { font-size:24px !important; margin:3px 0 2px !important; color:var(--blue) !important; }
+.rsp2-kpi-sub { font-size:10.5px; color:var(--tx3); letter-spacing:-0.21px; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rsp2-kpi--gauge { display:flex; align-items:center; gap:13px; }
+.rsp2-kpi-body { min-width:0; }
+.rsp2-gauge { width:52px; height:52px; flex-shrink:0; }
+.rsp2-gauge .track { stroke:var(--track); }
+.rsp2-gauge .fill { stroke:var(--green); stroke-linecap:round; transition:stroke-dasharray 0.4s ease; }
+.rsp2-gauge text { font-family:var(--font); font-size:11px; font-weight:600; fill:var(--tx1); }
+.rsp2-gaugeval { font-size:19px !important; }
+
+/* ---- analysis row ---- */
+.rsp2-main { display:grid; grid-template-columns:1.7fr 1fr; gap:16px; align-items:stretch; min-height:0; }
+.rsp2-main > * { min-width:0; }
+.rsp2-combo { display:flex; flex-direction:column; min-height:0; }
+.rsp2-headtools { display:flex; align-items:center; gap:8px; min-width:0; }
+.rsp2-seg {
+  display:flex; background:var(--inner); border:1px solid var(--card-line);
+  border-radius:10px; padding:3px; gap:2px;
+}
+.rsp2-seg button {
+  font-family:var(--font); font-size:11px; font-weight:500; letter-spacing:-0.22px;
+  border:none; background:transparent; color:var(--tx2);
+  border-radius:8px; padding:5px 12px; cursor:pointer; white-space:nowrap;
+}
+.rsp2-seg button:hover { color:var(--tx1); }
+.rsp2-seg button.on { background:var(--card-bg); color:var(--tx1); font-weight:600; box-shadow:0 1px 3px rgba(37,37,37,0.12); }
+.rsp2-seg-sm button { padding:4px 10px; font-size:10.5px; }
+
+.rsp2-combobody { display:grid; grid-template-columns:280px 1fr; gap:18px; flex:1; min-height:0; }
+.rsp2-donutside {
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  border-right:1px solid var(--card-line); padding-right:18px; min-height:0;
+}
+.rsp2-donutside .pie-chart-container { flex:0 1 auto; width:100%; max-width:225px; height:210px !important; }
+.rsp2-legend { margin-top:0 !important; gap:8px !important; }
+.rsp2-legend span { padding:4px 10px !important; font-size:10.5px !important; }
+.rsp2-legend b { font-weight:600; color:var(--tx1); margin-left:2px; }
+.rsp2-logside { display:flex; flex-direction:column; min-height:0; }
+.rsp2-loglist { flex:1; min-height:0; overflow-y:auto; padding-right:6px; display:flex; flex-direction:column; }
+.rsp2-loglist::-webkit-scrollbar { width:6px; }
+.rsp2-loglist::-webkit-scrollbar-thumb { background:var(--card-line); border-radius:4px; }
+.rsp2-logitem { display:flex; align-items:center; gap:12px; padding:8px 0; flex-shrink:0; }
+.rsp2-logitem + .rsp2-logitem { border-top:1px solid var(--card-line); }
+.rsp2-logavatar {
+  width:32px; height:32px; border-radius:10px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12.5px; font-weight:600;
+}
+.rsp2-logmeta { flex:1; min-width:0; }
+.rsp2-logmeta .nm { font-size:12.5px; font-weight:600; color:var(--tx1); letter-spacing:-0.25px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rsp2-logmeta .tm { font-size:10px; color:var(--tx3); }
+.rsp2-meter {
+  flex:1; position:relative; height:8px; border-radius:5px; min-width:50px;
+  background:linear-gradient(90deg,
+    rgba(231,76,60,0.14) 0 70%,
+    rgba(255,191,45,0.20) 70% 80%,
+    rgba(63,175,88,0.16) 80% 100%);
+}
+.rsp2-meter b { position:absolute; left:0; top:0; bottom:0; border-radius:5px; opacity:0.9; }
+.rsp2-meter b.good { background:var(--green); }
+.rsp2-meter b.fair { background:var(--amber); }
+.rsp2-meter b.poor { background:var(--red); }
+.rsp2-meter .tick { position:absolute; top:-3px; bottom:-3px; width:1px; background:var(--card-bg); }
+.rsp2-meter i {
+  position:absolute; top:50%; left:var(--v); transform:translate(-50%,-50%);
+  width:14px; height:14px; border-radius:50%;
+  background:var(--card-bg); box-shadow:0 1px 4px rgba(37,37,37,0.25);
+}
+.rsp2-meter i.good { border:4px solid var(--green); }
+.rsp2-meter i.fair { border:4px solid var(--amber); }
+.rsp2-meter i.poor { border:4px solid var(--red); }
+.rsp2-logscore { flex-shrink:0; width:100px; text-align:right; }
+.rsp2-scorepill {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:11px; font-weight:600; border-radius:var(--r-pill); padding:3px 10px;
+}
+.rsp2-scorepill .rsp-dot { width:6px; height:6px; background:currentColor; }
+.rsp2-scorepill.good { background:var(--green-light); color:var(--green); }
+.rsp2-scorepill.fair { background:#fff7e2; color:#b4830f; }
+.rsp2-scorepill.poor { background:#fdecea; color:var(--red); }
+.rsp2-logscore .mk { font-size:9.5px; color:var(--tx3); margin-top:1px; }
+.rsp2-logfoot { font-size:10px; color:var(--text-disabled); text-align:center; padding-top:6px; flex-shrink:0; }
+.rsp2-logempty {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  color:var(--tx3); font-size:11.5px; letter-spacing:-0.23px; text-align:center; padding:24px 0;
+}
+.rsp2-logempty strong { color:var(--tx2); font-size:13px; font-weight:600; }
+
+/* ---- right column ---- */
+.rsp2-right { display:grid; grid-template-rows:auto 1fr; gap:16px; min-height:0; }
+.rsp2-trendcard { display:flex; flex-direction:column; }
+.rsp2-wk { display:flex; align-items:flex-end; gap:16px; }
+.rsp2-wkstat { flex-shrink:0; padding-bottom:14px; }
+.rsp2-wkstat .n { font-size:26px; font-weight:700; letter-spacing:-0.52px; line-height:1; color:var(--blue); }
+.rsp2-wkstat .l { font-size:10px; color:var(--tx3); margin-top:3px; max-width:84px; }
+.rsp2-wkchart { flex:1; min-width:0; }
+.rsp2-wkbars {
+  display:grid; align-items:end; gap:6px; height:62px;
+  border-bottom:2px solid var(--card-line); padding:0 2px;
+}
+.rsp2-wb { position:relative; width:100%; max-width:12px; margin:0 auto; border-radius:6px 6px 2px 2px; background:linear-gradient(180deg,#5ea4fb,var(--blue)); }
+.rsp2-wb.z { height:6px !important; border-radius:3px; background:var(--card-line); }
+.rsp2-wbval { position:absolute; top:-17px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:600; color:var(--blue); }
+.rsp2-wkdays { display:grid; gap:6px; padding:5px 2px 0; }
+.rsp2-wkdays span { font-size:8.5px; color:var(--tx3); text-align:center; min-height:11px; }
+.rsp2-wkdays span.today { color:var(--blue); font-weight:600; }
+
+.rsp2-gendercard { display:flex; flex-direction:column; min-height:0; }
+.rsp2-gachips { display:flex; gap:8px; margin-bottom:8px; flex-shrink:0; }
+.rsp2-gachip {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:10.5px; font-weight:600; letter-spacing:-0.21px;
+  border-radius:var(--r-pill); padding:4px 12px;
+}
+.rsp2-gachip.m { background:var(--accent-tint); color:var(--blue); }
+.rsp2-gachip.f { background:#fdf1e5; color:#c06a15; }
+.rsp2-gachip .sw { width:7px; height:7px; border-radius:50%; background:currentColor; }
+.rsp2-garows { flex:1; display:flex; flex-direction:column; justify-content:center; gap:13px; min-height:0; position:relative; }
+.rsp2-garow { display:grid; grid-template-columns:42px 1fr 22px; align-items:center; gap:10px; }
+.rsp2-garow .lbl { font-size:10px; color:var(--tx3); text-align:right; letter-spacing:-0.2px; }
+.rsp2-garow .track { height:12px; border-radius:6px; background:var(--inner); overflow:hidden; display:flex; }
+.rsp2-garow .track b { display:block; height:100%; }
+.rsp2-garow .track b.m { background:linear-gradient(90deg,#5ea4fb,var(--blue)); }
+.rsp2-garow .track b.f { background:linear-gradient(90deg,#f09a4a,var(--orange)); }
+.rsp2-garow .cnt { font-size:10.5px; font-weight:600; color:var(--tx1); text-align:right; }
+.rsp2-garow .cnt.zero { color:var(--text-disabled); font-weight:400; }
+.rsp2-gendercard .rsp-empty { position:absolute; inset:0; }
+
+/* ---- one-screen lock (desktop, tall enough; otherwise scroll) ---- */
+@media (min-width: 1200px) and (min-height: 680px) {
+  body.rsp2-fit { height:100vh; overflow:hidden; }
+  body.rsp2-fit .main-wrapper { height:100vh; display:flex; flex-direction:column; overflow:hidden; padding-bottom:0 !important; }
+  /* footer joins the flex column as a slim one-line bar (v84) */
+  body.rsp2-fit .main-wrapper .footer {
+    position:static !important; flex-shrink:0;
+    padding:9px 28px !important; border-top:1px solid var(--card-line);
+  }
+  body.rsp2-fit .footer .container-fluid { padding:0 !important; }
+  body.rsp2-fit .rsp-hd-in { padding:10px 28px; }
+  body.rsp2-fit .section.new-dashboard { flex:1 1 auto !important; min-height:0; display:flex !important; }
+  body.rsp2-fit .section.new-dashboard > .container-fluid {
+    flex:1 1 auto; min-height:0; width:100%;
+    display:flex; flex-direction:column; gap:16px;
+    padding:16px 28px !important;
+  }
+  body.rsp2-fit .rsp2-daybar, body.rsp2-fit .rsp2-kpis { flex-shrink:0; }
+  body.rsp2-fit .rsp2-main { flex:1 1 auto; min-height:260px; }
+}
+
+/* ---- smaller screens: stack and scroll ---- */
+@media (max-width: 1199px) {
+  .rsp2-main { grid-template-columns:1fr; }
+  .rsp2-kpis { grid-template-columns:repeat(2,1fr); }
+  .rsp2-combobody { grid-template-columns:1fr; }
+  .rsp2-donutside { border-right:none; padding-right:0; border-bottom:1px solid var(--card-line); padding-bottom:14px; }
+  .rsp2-loglist { overflow:visible; }
+  .rsp2-daybar { flex-wrap:wrap; }
+  .rsp2-strip { grid-template-columns:repeat(7,1fr); flex-basis:100%; order:3; }
+  .rsp2-day:nth-child(-n+7) { display:none; } /* 7 most recent days on small screens */
+}
+@media (max-width: 600px) {
+  .rsp2-kpis { grid-template-columns:1fr 1fr; gap:10px; }
+  .rsp2-logmeta { width:96px; }
+  .rsp2-logscore { width:84px; }
+  .rsp2-meter { display:none; } /* phone: pill carries the value */
+}
+
+/* donut centre text scaled to the compact combo-card ring */
+.rsp2-donutside #donutCenterText h2 { font-size: 26px !important; margin: 0 !important; line-height: 1.15 !important; }
+.rsp2-donutside #donutCenterText p { font-size: 10.5px !important; margin: 0 !important; }
+.rsp2-donutside #donutCenterText small { font-size: 10.5px !important; line-height: 1.2; }
+
+/* gender card: its own compact score selector + chips row with the band seg */
+.rsp2-gasel { height:30px !important; min-height:30px !important; font-size:11px !important; padding:0 8px !important; flex:0 0 auto; }
+.rsp2-gachipsrow { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-shrink:0; }
+.rsp2-gachipsrow .rsp2-gachips { margin-bottom:0; }
+
+/* gender head: title · band seg · score select on ONE balanced line */
+.rsp2-gahead { gap:10px; }
+.rsp2-gahead .rsp-kpi-label { flex:0 1 auto; }
+.rsp2-gahead .rsp2-gasel { margin-left:auto; }
+.rsp2-gachips { margin-bottom:10px; }
+
+/* gender card: the two dropdowns sit together, matching, on the right */
+.rsp2-gaselwrap { margin-left:auto; display:flex; gap:8px; flex-shrink:0; }
+.rsp2-gahead .rsp2-gasel { margin-left:0; }
+
+/* custom dropdowns — design-system button + floating menu */
+.rsp2-dd { position:relative; flex-shrink:0; }
+.rsp2-ddbtn {
+  display:inline-flex; align-items:center; gap:8px;
+  height:30px; padding:0 10px; cursor:pointer;
+  background:var(--card-bg); border:1px solid var(--card-line); border-radius:var(--r-input);
+  font-family:var(--font); font-size:11px; font-weight:600; letter-spacing:-0.22px; color:var(--tx2);
+  transition:border-color 0.15s, box-shadow 0.15s;
+}
+.rsp2-ddbtn:hover { border-color:var(--edge-soft); background:var(--inner); }
+.rsp2-dd.open .rsp2-ddbtn { border-color:var(--blue); box-shadow:0 0 0 3px var(--accent-tint); }
+.rsp2-ddbtn .lbl { display:inline-flex; align-items:center; gap:6px; }
+.rsp2-ddbtn .chev { font-size:9px; color:var(--tx3); transition:transform 0.15s; }
+.rsp2-dd.open .chev { transform:rotate(180deg); }
+.rsp2-dd .dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.rsp2-ddmenu {
+  position:absolute; top:calc(100% + 6px); right:0; min-width:150px; z-index:60;
+  background:var(--card-bg); border:1px solid var(--edge-soft); border-radius:12px;
+  box-shadow:var(--shadow-lift); padding:5px; display:none;
+}
+.rsp2-dd.open .rsp2-ddmenu { display:block; animation:rspDdIn 0.12s ease-out; }
+@keyframes rspDdIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+.rsp2-ddmenu button {
+  width:100%; display:flex; align-items:center; gap:8px;
+  border:none; background:transparent; cursor:pointer; text-align:left;
+  font-family:var(--font); font-size:12px; font-weight:500; letter-spacing:-0.24px; color:var(--tx2);
+  padding:8px 11px; border-radius:8px;
+}
+.rsp2-ddmenu button:hover { background:var(--inner); color:var(--tx1); }
+.rsp2-ddmenu button.on { color:var(--blue); font-weight:600; background:var(--accent-tint); }
+.rsp2-ddmenu button .fa-check { margin-left:auto; font-size:10px; visibility:hidden; }
+.rsp2-ddmenu button.on .fa-check { visibility:visible; }
+
+/* "Show all N" expander in the day log footer */
+.rsp2-showall {
+  font-family:var(--font); font-size:10.5px; font-weight:600; letter-spacing:-0.21px;
+  color:var(--blue); background:var(--accent-tint); border:none; border-radius:var(--r-pill);
+  padding:3px 11px; margin-left:8px; cursor:pointer;
+}
+.rsp2-showall:hover { background:var(--blue); color:#fff; }
+
+/* profile Test History footer: count + load-older control */
+.rsp-history-foot {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:10px 2px 2px; border-top:1px solid var(--card-line); margin-top:8px;
+}
+.rsp-history-foot span { font-size:11px; color:var(--tx3); letter-spacing:-0.22px; }
+
+/* profile graph card: range header above the scrollable plot */
+.scorechart-chart-wrapper { display:flex; flex-direction:column; }
+.vp-graphhead { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; flex-shrink:0; }
+.vp-graphrange { font-size:11px; color:var(--tx3); letter-spacing:-0.22px; }
+.scorechart-chart-wrapper .rsp-chart-scroll { flex:1; min-height:0; }
+
+/* graph empty-state overlays only the plot area, below the range header */
+.scorechart-chart-wrapper { position:relative; }
+.scorechart-chart-wrapper .rsp-empty { top:56px; }
+.vp-graphhead { position:relative; z-index:2; }
+
+/* ===========================================================================
+   v78 — profile page: score tabs + graph + test history merged into ONE card
+   (same combo pattern as the dashboard's Scores & test log).
+   =========================================================================== */
+.vp-combo { display:flex; flex-direction:column; height:560px; }
+.vp-combohead {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin-bottom:14px; flex-shrink:0; flex-wrap:wrap;
+}
+.vp-combohead .tab-button-wrapper {
+  display:flex; gap:4px; background:var(--inner);
+  border:1px solid var(--card-line); border-radius:12px; padding:4px;
+  max-width:100%; overflow-x:auto;
+}
+.vp-combohead .btn_table_score {
+  border:none; background:transparent; border-radius:9px;
+  padding:7px 14px !important; cursor:pointer; white-space:nowrap;
+  font-family:var(--font); font-size:12.5px !important; font-weight:500;
+  letter-spacing:-0.25px; color:var(--tx2);
+}
+.vp-combohead .btn_table_score:hover { color:var(--tx1); }
+.vp-combohead .btn_table_score.active {
+  background:var(--card-bg); color:var(--blue); font-weight:600;
+  box-shadow:0 1px 3px rgba(37,37,37,0.12);
+}
+.vp-combobody { flex:1; min-height:0; display:grid; grid-template-columns:1fr 330px; gap:18px; }
+.vp-graphside { position:relative; display:flex; flex-direction:column; min-width:0; min-height:0; }
+.vp-graphside .vp-graphhead { margin-bottom:6px; }
+.vp-graphside .rsp-chart-scroll { flex:1; min-height:0; }
+.vp-graphside .rsp-empty { top:28px; }
+.vp-histside {
+  display:flex; flex-direction:column; min-height:0;
+  border-left:1px solid var(--card-line); padding-left:18px;
+}
+.vp-histscroll { flex:1; min-height:0; overflow-y:auto; padding-right:6px; }
+.vp-histscroll::-webkit-scrollbar { width:6px; }
+.vp-histscroll::-webkit-scrollbar-thumb { background:var(--card-line); border-radius:4px; }
+
+@media (max-width: 991px) {
+  .vp-combo { height:auto; }
+  .vp-combobody { grid-template-columns:1fr; }
+  .vp-histside { border-left:none; padding-left:0; border-top:1px solid var(--card-line); padding-top:14px; }
+  .vp-histscroll { max-height:420px; }
+  .vp-graphside .rsp-chart-scroll { min-height:300px; }
+}
+
+/* the combo card is the row's only child now — one full-width column */
+.tab-content-wrapper .tab-row { display:grid; grid-template-columns:1fr !important; }
+
+/* v80 — combo card polish: history header matches the card language,
+   rows get a hover and tighter rhythm */
+.vp-histside .title-wrapper { margin:0 0 10px; }
+.vp-histside .title-wrapper h3 {
+  font-size:15px !important; font-weight:600 !important;
+  letter-spacing:-0.3px !important; color:var(--tx1) !important; margin:0 !important;
+}
+.vp-histscroll #scoreTable { width:100%; border-collapse:collapse; }
+.vp-histscroll #scoreTable tr[data-idx] { cursor:pointer; }
+.vp-histscroll #scoreTable tr[data-idx]:hover th,
+.vp-histscroll #scoreTable tr[data-idx]:hover td { background:var(--inner); }
+.vp-histscroll #scoreTable th, .vp-histscroll #scoreTable td {
+  padding:10px 8px; border-bottom:1px solid var(--card-line); vertical-align:middle;
+  transition:background 0.12s;
+}
+.vp-histscroll #scoreTable tr:last-child th,
+.vp-histscroll #scoreTable tr:last-child td { border-bottom:none; }
+.vp-graphside .vp-graphrange { font-weight:500; }
+
+/* v81 — history rows: the status pill and the gas chip share one exact size
+   and sit on the same line (chip bottom-anchored to the score row) */
+.new-dashboard #scoreTable .score p,
+.new-dashboard #scoreTable td p {
+  box-sizing: border-box; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px !important; font-weight: 600 !important;
+  padding: 0 12px !important; border-radius: var(--r-pill);
+  letter-spacing: -0.22px !important; margin: 0 !important; line-height: 1 !important;
+}
+.new-dashboard #scoreTable .score p { min-width: 56px; }
+.new-dashboard #scoreTable td p { font-weight: 500 !important; }
+.new-dashboard #scoreTable td { vertical-align: bottom; }
+.new-dashboard #scoreTable .score { margin-top: 7px; }
+
+/* v82 — profile head: the 1W/1M/3M seg gets the same anatomy as the score
+   tabs pill (shell padding/radius + button padding/font), so both boxes are
+   the same height and sit on the same centerline */
+.vp-combohead .rsp2-seg { padding:4px; border-radius:12px; gap:4px; align-self:center; }
+.vp-combohead .rsp2-seg button {
+  padding:7px 14px; font-size:12.5px; letter-spacing:-0.25px; border-radius:9px;
+}
+/* the template gives .tab-button-wrapper a 14px top margin — inside the flex
+   head that margin skews vertical centering, so both boxes must run margin 0 */
+.vp-combohead .tab-button-wrapper, .vp-combohead .rsp2-seg { margin:0 !important; }
+/* selected range reads blue, same as the active score tab */
+.vp-combohead .rsp2-seg button.on { color:var(--blue); }
+
+/* ===========================================================================
+   v84 — footer: slim hairline bar, same language on every page.
+   Left: credit line (brand link weighted). Right: Terms · Privacy with a dot
+   separator. Everything hovers to brand blue; stacks centered on phones.
+   =========================================================================== */
+.main-wrapper .footer { padding:16px 0; border-top:1px solid var(--card-line); }
+.footer p { margin:0 !important; }
+.footer p, .footer a {
+  font-size:12px !important; letter-spacing:-0.24px !important;
+  color:var(--tx3) !important; text-decoration:none !important;
+}
+.footer .copyright p a { color:var(--tx2) !important; font-weight:600; }
+.footer a:hover { color:var(--blue) !important; }
+.footer .terms { align-items:center; }
+.footer .terms a.ml-15 { margin-left:22px !important; position:relative; }
+.footer .terms a.ml-15::before {
+  content:"\00b7"; position:absolute; left:-13px;
+  color:var(--tx3); font-weight:700; pointer-events:none;
+}
+@media (max-width: 767px) {
+  .main-wrapper .footer { padding:12px 0; }
+  .main-wrapper .footer .terms { margin-bottom:6px !important; }
+}
+
+/* v85 — Test history page: same 28px page gutters as the dashboard (the
+   template's 40px made a wide dead strip beside the card at large windows),
+   and the actions column hugs the card's right edge so rows span fully */
+.main-wrapper .rsp-histwrap { padding-left:28px !important; padding-right:28px !important; }
+@media (min-width: 761px) {
+  /* View column: header centered over the centered icon pair, exactly like
+     every other column (header centered over its values) */
+  #scoreContainer .table th:nth-child(7),
+  #scoreContainer .table td:nth-child(7) { text-align:center !important; padding-left:0 !important; padding-right:0 !important; }
+}
+
+/* v86/v88 — profile Test History: whole-row selection as a rounded filled
+   block (light blue tint). Transparent reserved borders keep layout stable;
+   hovering fills the row and hides its divider, pressing deepens the tint —
+   clicking anywhere on the row opens the report. */
+.vp-histscroll #scoreTable { border-collapse:separate !important; border-spacing:0; }
+.vp-histscroll #scoreTable tr[data-idx] th,
+.vp-histscroll #scoreTable tr[data-idx] td {
+  border:1px solid transparent; border-bottom:1px solid var(--card-line);
+  /* a global ".section table td { border-color:… !important }" rule would
+     repaint the hidden edges grey — match its importance */
+  border-top-color:transparent !important;
+  transition:background 0.12s, border-color 0.12s;
+}
+.vp-histscroll #scoreTable tr[data-idx] th { border-right:none; border-left-color:transparent !important; }
+.vp-histscroll #scoreTable tr[data-idx] td { border-left:none; border-right-color:transparent !important; }
+/* round the ring corners only while the row is lit — an always-on radius
+   would curve the ends of the grey divider lines */
+.vp-histscroll #scoreTable tr[data-idx]:hover th,
+.vp-histscroll #scoreTable tr[data-idx].hov th,
+.vp-histscroll #scoreTable tr[data-idx]:active th { border-radius:10px 0 0 10px; }
+.vp-histscroll #scoreTable tr[data-idx]:hover td,
+.vp-histscroll #scoreTable tr[data-idx].hov td,
+.vp-histscroll #scoreTable tr[data-idx]:active td { border-radius:0 10px 10px 0; }
+.vp-histscroll #scoreTable tr[data-idx]:last-child th,
+.vp-histscroll #scoreTable tr[data-idx]:last-child td { border-bottom:1px solid transparent; }
+.vp-histscroll #scoreTable tr[data-idx]:hover th,
+.vp-histscroll #scoreTable tr[data-idx]:hover td,
+.vp-histscroll #scoreTable tr[data-idx].hov th,
+.vp-histscroll #scoreTable tr[data-idx].hov td {
+  background:var(--accent-tint) !important; border-color:transparent !important;
+}
+.vp-histscroll #scoreTable tr[data-idx]:active th,
+.vp-histscroll #scoreTable tr[data-idx]:active td { background:rgba(48,139,249,0.2) !important; }
+
+/* v89 — trend bars: hover highlight + custom tooltip. Hovering a bar lights
+   it and quiets its siblings; a dark tip above it carries "12 Oct — 5 tests".
+   Each bar's hit area is its full column (62px tall), so thin bars are easy
+   to hover. */
+.rsp2-wkchart { position:relative; }
+.rsp2-wb { transition:opacity 0.12s, filter 0.12s; }
+/* full-column hit area, only on bars that have tests */
+.rsp2-wb:not(.z)::after { content:""; position:absolute; left:-3px; right:-3px; bottom:0; height:62px; }
+#trendBars .rsp2-wb:not(.z):hover { filter:brightness(0.85) saturate(1.25); }
+.rsp2-trendtip {
+  position:absolute; z-index:6; pointer-events:none;
+  background:var(--tx1); color:var(--card-bg);
+  font-family:var(--font); font-size:10.5px; font-weight:600; letter-spacing:-0.21px;
+  padding:4px 9px; border-radius:7px; white-space:nowrap;
+  box-shadow:0 4px 12px rgba(20,30,45,0.28);
+  opacity:0; transform:translate(-50%,-100%) translateY(0);
+  transition:opacity 0.1s, transform 0.1s;
+}
+.rsp2-trendtip.show { opacity:1; transform:translate(-50%,-100%) translateY(-7px); }
+.rsp2-trendtip::after {
+  content:""; position:absolute; left:50%; top:100%; transform:translateX(-50%);
+  border:4px solid transparent; border-top-color:var(--tx1);
+}
+
+/* ===========================================================================
+   v93 — in-page report dialog: the A4 report loads in an iframe overlay
+   instead of navigating away. Slim header: title, open-in-new-tab, close.
+   =========================================================================== */
+.rsp-repmodal { position:fixed; inset:0; z-index:1300; display:flex; align-items:center; justify-content:center; padding:18px; }
+.rsp-repmodal[hidden] { display:none; }
+.rsp-repmodal-back { position:absolute; inset:0; background:rgba(15,23,42,0.55); backdrop-filter:blur(2px); }
+.rsp-repmodal-card {
+  position:relative; width:min(920px,100%); height:min(880px,100%);
+  background:var(--card-bg); border-radius:16px; overflow:hidden;
+  box-shadow:0 24px 64px rgba(15,23,42,0.35);
+  display:flex; flex-direction:column;
+}
+.rsp-repmodal-head {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:7px 10px 7px 16px; border-bottom:1px solid var(--card-line); flex-shrink:0;
+}
+.rsp-repmodal-title { font-family:var(--font); font-size:13px; font-weight:600; letter-spacing:-0.26px; color:var(--tx1); white-space:nowrap; }
+.rsp-repmodal-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+.rsp-repmodal-actions a, .rsp-repmodal-actions button:not(.rsp-repmodal-btn) {
+  width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center;
+  border:none; background:transparent; border-radius:8px; color:var(--tx3);
+  cursor:pointer; font-size:13px; text-decoration:none;
+}
+.rsp-repmodal-actions a:hover, .rsp-repmodal-actions button:not(.rsp-repmodal-btn):hover { background:var(--inner); color:var(--tx1); }
+/* compact pills that drive the report's own Download / Send buttons */
+.rsp-repmodal-btn {
+  display:inline-flex; align-items:center; gap:7px; border:none; cursor:pointer;
+  font-family:var(--font); font-size:11.5px; font-weight:600; letter-spacing:-0.23px;
+  padding:7px 13px; border-radius:var(--r-pill); transition:background 0.12s, opacity 0.12s;
+}
+.rsp-repmodal-btn i { font-size:11px; }
+.rsp-repmodal-btn.dark { background:var(--tx1); color:var(--card-bg); }
+.rsp-repmodal-btn.dark:hover { background:#3a3a3a; }
+.rsp-repmodal-btn.blue { background:var(--blue); color:#fff; }
+.rsp-repmodal-btn.blue:hover { background:#2277e0; }
+.rsp-repmodal-btn:disabled { opacity:0.45; cursor:default; }
+.rsp-repmodal-body { flex:1; min-height:0; background:var(--canvas); }
+.rsp-repmodal-body iframe { width:100%; height:100%; border:none; display:block; }
+body.rsp-repmodal-open { overflow:hidden; }
+@media (max-width: 600px) {
+  .rsp-repmodal { padding:0; }
+  .rsp-repmodal-card { border-radius:0; width:100%; height:100%; }
+}
+
+/* ===========================================================================
+   v97 — test log search: a magnifier in the card head that expands into an
+   input. Collapsed it is just the icon; open it is a pill with a × to close.
+   =========================================================================== */
+.rsp2-logsearch { display:flex; align-items:center; gap:0; flex-shrink:0; }
+.rsp2-searchbtn {
+  width:32px; height:32px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center;
+  border:1px solid transparent; background:transparent; border-radius:9px;
+  color:var(--tx3); cursor:pointer; font-size:12.5px; transition:background 0.12s, color 0.12s;
+}
+.rsp2-searchbtn:hover { background:var(--inner); color:var(--tx1); }
+.rsp2-logsearch.on .rsp2-searchbtn { color:var(--blue); }
+.rsp2-logsearch input {
+  width:0; padding:0; border:none; background:transparent; outline:none;
+  font-family:var(--font); font-size:12px; letter-spacing:-0.24px; color:var(--tx1);
+  transition:width 0.18s ease, padding 0.18s ease;
+}
+.rsp2-logsearch input::placeholder { color:var(--tx3); }
+.rsp2-logsearch.on {
+  background:var(--inner); border:1px solid var(--card-line); border-radius:var(--r-pill); padding-right:4px;
+}
+.rsp2-logsearch.on .rsp2-searchbtn { background:transparent; }
+.rsp2-logsearch.on input { width:140px; padding:6px 6px 6px 0; }
+.rsp2-searchclose {
+  width:0; height:24px; overflow:hidden; border:none; background:transparent; padding:0;
+  color:var(--tx3); cursor:pointer; font-size:11px; transition:width 0.18s ease;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.rsp2-logsearch.on .rsp2-searchclose { width:24px; }
+.rsp2-searchclose:hover { color:var(--tx1); }
+@media (max-width: 600px) {
+  .rsp2-logsearch.on input { width:108px; }
+}
+/* keep the card head on one line while the search is expanded */
+.rsp2-headtools .rsp-link { white-space:nowrap; }
+.rsp2-logsearch.on input { width:128px; }
+.rsp-kpi-top:has(.rsp2-logsearch.on) .rsp-kpi-ctx { display:none; }
+
+/* ===========================================================================
+   v99 — QA fixes
+   =========================================================================== */
+/* a test with no value for the selected score shows a neutral dash, not a
+   red 0% that reads as a genuine bad result */
+.rsp2-scorepill.none { background:var(--inner); color:var(--tx3); }
+.rsp2-scorepill.none .rsp-dot { background:var(--text-disabled, #9aa7b8); }
+
+/* phone: the score tabs used to eat the whole head row, pushing the log
+   search and "See more" off-screen where they could not be tapped */
+@media (max-width: 760px) {
+  .rsp2-combo .rsp-kpi-top { flex-wrap:wrap; row-gap:10px; }
+  .rsp2-headtools { flex-wrap:wrap; width:100%; justify-content:flex-start; gap:8px; }
+  .rsp2-headtools .rsp2-seg { order:1; flex:1 1 100%; overflow-x:auto; }
+  .rsp2-logsearch { order:2; }
+  .rsp2-headtools .rsp-link { order:3; margin-left:auto; }
+}
+/* profile history: neutral chip for a test with no value for this score */
+.new-dashboard #scoreTable .text-none { color: var(--tx3) !important; background: var(--inner); }
+
+/* ===========================================================================
+   v100 — Test history and Subjects share one page shell: same heading, same
+   gutters, same carded table, same loading / empty states.
+   =========================================================================== */
+/* page gutters (was .rsp-histwrap, used on Test history only) */
+.main-wrapper .rsp-pagewrap { padding-left:28px !important; padding-right:28px !important; }
+
+/* the Subjects table gets the same card as #scoreContainer on Test history */
+.onboarded-subjects #subjectsContainer {
+  background:var(--card-bg); border:1px solid var(--card-edge);
+  border-radius:var(--r-card); box-shadow:var(--shadow-card);
+  padding:10px 24px; margin-top:16px;
+}
+.onboarded-subjects .card-style { padding:0; background:transparent; border:none; box-shadow:none; }
+.onboarded-subjects #subjectsContainer table { margin:0; width:100%; }
+
+/* "Loading …" line, identical on both pages */
+.rsp-loading, #scoreContainer > p {
+  margin:0; padding:34px 0; text-align:center;
+  font-size:12.5px; letter-spacing:-0.25px; color:var(--tx3);
+}
+/* empty state sits inside the card rather than floating on the canvas */
+.onboarded-subjects .error_wrappper {
+  flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:40px 0; gap:6px;
+}
+.onboarded-subjects .error_wrappper h3 { font-size:15px; font-weight:600; letter-spacing:-0.3px; margin:0; }
+.onboarded-subjects .error_wrappper p  { font-size:12.5px; letter-spacing:-0.25px; margin:0; max-width:380px; }
+/* hide the empty table head while the first page is still loading (the
+   desktop rule above forces display:table, so an inline style cannot win) */
+.onboarded-subjects #subjectsContainer.is-loading table { display:none !important; }
+/* The table used to BE the card on this page (see the rule further up), so
+   inside the new card wrapper it has to go back to being a plain table —
+   otherwise it renders as a card inside a card. Mirrors #scoreContainer
+   .table on Test history. */
+.onboarded-subjects #subjectsContainer table {
+  background:transparent; border:none !important; border-radius:0;
+  box-shadow:none; padding:0; margin:0 !important; width:100%;
+}
+
+/* ===========================================================================
+   v103 — list pages: heading given the same weight as the rest of the site,
+   and the card pulled up close to it instead of floating 50px below.
+   =========================================================================== */
+.rsp-pagewrap { padding-top:26px !important; }
+.rsp-pagewrap .rsp-pagehead { margin:0 0 14px; }
+.rsp-pagewrap .rsp-pagetitle {
+  font-size:24px !important; font-weight:700 !important;
+  letter-spacing:-0.6px !important; line-height:1.15 !important;
+  color:var(--tx1) !important; margin:0 0 3px !important;
+}
+.rsp-pagewrap .rsp-pagesub {
+  font-size:12.5px; letter-spacing:-0.25px; color:var(--tx3); margin:0;
+}
+/* the card sat 16px below plus the template's own row spacing */
+.rsp-pagewrap #scoreContainer,
+.onboarded-subjects #subjectsContainer { margin-top:0 !important; }
+.rsp-pagewrap .card-style { margin-bottom:14px !important; }
+/* pager sits under the card on both pages, never inside it */
+.rsp-pagewrap .rsp-pager { margin:0 2px 30px; }
+
+/* v104 — list pages: breathing room between the card and the pager line, and
+   far less dead space between the pager and the footer. The template reserved
+   85px at the bottom of .main-wrapper for an absolutely-positioned footer that
+   only needs ~55px. */
+.rsp-pagewrap .card-style { margin-bottom:0 !important; }
+.rsp-pagewrap .rsp-pager { margin:14px 2px 0 !important; padding-bottom:0; }
+.main-wrapper:has(.rsp-pagewrap) { padding-bottom:80px !important; } /* 55px footer + 25px gap */
+
+/* ===========================================================================
+   v106 — profile "Older" month picker: reaches history beyond the 90-day
+   window the 1W/1M/3M buttons use.
+   =========================================================================== */
+.vp-rangewrap { position:relative; }
+#btnOlder i { font-size:9px; margin-left:3px; opacity:0.7; }
+.vp-monthpick {
+  position:absolute; top:calc(100% + 6px); right:0; z-index:40; width:230px;
+  background:var(--card-bg); border:1px solid var(--card-edge);
+  border-radius:12px; box-shadow:0 12px 30px rgba(20,30,45,0.16);
+  padding:8px; animation:rspDdIn 0.12s ease-out;
+}
+.vp-monthpick[hidden] { display:none; }
+.vp-monthpick-head {
+  font-size:10.5px; font-weight:600; letter-spacing:-0.21px; color:var(--tx3);
+  text-transform:uppercase; padding:4px 8px 8px;
+}
+.vp-monthpick-list { max-height:260px; overflow-y:auto; }
+.vp-monthpick-list::-webkit-scrollbar { width:6px; }
+.vp-monthpick-list::-webkit-scrollbar-thumb { background:var(--card-line); border-radius:4px; }
+.vp-monthitem {
+  width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  border:none; background:transparent; border-radius:8px; cursor:pointer;
+  font-family:var(--font); font-size:12.5px; font-weight:500; letter-spacing:-0.25px;
+  color:var(--tx2); padding:8px 10px; text-align:left;
+}
+.vp-monthitem:hover { background:var(--inner); color:var(--tx1); }
+.vp-monthitem.on { background:var(--accent-tint); color:var(--blue); font-weight:600; }
+/* the test count for that month */
+.vp-monthitem b {
+  font-size:11px; font-weight:600; color:var(--tx3);
+  background:var(--inner); border-radius:var(--r-pill); padding:1px 8px; min-width:28px; text-align:center;
+}
+.vp-monthitem:hover b, .vp-monthitem.on b { background:var(--card-bg); }
+.vp-monthpick-empty { margin:0; padding:14px 10px; font-size:12px; color:var(--tx3); text-align:center; }
