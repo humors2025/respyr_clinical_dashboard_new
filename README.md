@@ -5,62 +5,80 @@ device. Clinicians sign in, review subject test results across four
 breath-derived scores (sugar, liver, gut, respiratory), and download or email
 the PDF health report.
 
-This repo is the **frontend only**. All data comes from the Node dashboard
+**100% static HTML + JavaScript — no server-side code.** It deploys on AWS
+Amplify, or any static file host. All data comes from the Node dashboard
 backend (`respyr-dashboard-backend`, deployed to AWS Lambda), which is shared
-separately and will be added to this repo once it is live. No file here
-connects to a database, sends mail, or verifies a token.
+separately and will be added to this repo once it is live.
+
+> This used to be a PHP-served app. In Oct 2026 every page was converted to
+> static HTML, and the report's PHP interpretation engine was ported to
+> `report/methods.js`. The port is **differentially tested**: `tools/` holds
+> harnesses that run the original PHP (`tools/reference/methods.php`) and the
+> JS side by side over a sweep of inputs — 771 comparisons, byte-identical.
+> Do not edit score thresholds or clinical wording in `methods.js` without
+> re-running that harness; clinicians read reports against those exact words.
 
 ## Layout
 
-The dashboard lives at the repo root, which is also the web root; the login
-portal is the one subfolder:
-
 ```
 / (web root)
-├── index.php                 bounces logged-out visitors to the login portal
-├── dashboard.php  history.php  patients.php  view-profile.php  ...
-├── report/                   the PDF health report page
-├── pages/  assets/           shared includes and static files
+├── index.html                bounces logged-out visitors to the login portal
+├── dashboard.html  history.html  patients.html  view-profile.html
+├── admin-profile.html  usage_analytics.html
+├── report/
+│   ├── user_report.html      the PDF health report page
+│   └── methods.js            score interpretation engine (see note above)
+├── assets/                   styles, charts, images
 ├── clinical-v2/              login portal (sign-in, forgot/change password)
-└── router.php                dev-only router for PHP's built-in server
+└── tools/                    PHP-vs-JS differential test harnesses
 ```
 
 - Logged-out visitors on any dashboard page are bounced to `./clinical-v2/`
-- After sign-in the portal redirects back up to `/dashboard`
-
-## Tech
-
-PHP is only the page shell (shared includes and reading URL parameters).
-Everything the pages *do* — login, data fetching, charts, the PDF build, the
-report email — is JavaScript in the browser talking to the Node backend via
-`window.NODE_API` and a `Bearer` JWT from login.
+- After sign-in the portal redirects back up to `/dashboard.html`
+- Shared chrome (sidebar, headers, footer) is inlined into each page — a
+  change to the sidebar means the same edit on each dashboard page
 
 ## Run locally
 
+Any static file server works. With the Node backend running on port 3001
+(its repo has `npm start`):
+
 ```
-php -S localhost:8080 router.php
+python -m http.server 8080
+# or: npx serve -l 8080
 ```
 
-Then open http://localhost:8080/clinical-v2/ and sign in. The pages expect the
-Node backend on http://localhost:3001 (its repo has `npm start` for that).
+Then open http://localhost:8080/ and sign in.
 
 ## Deploy
 
-Copy the repo contents into the PHP host's web root (router.php is not needed
-there — Apache rewrites handle the extensionless URLs).
+**Amplify:** connect the repo, branch `main`. `amplify.yml` is already set up
+— no build step, the repo deploys as-is.
 
-> **URL change from the previous layout.** The dashboard used to be served
-> under `/clinical-dashboard_v2/…`; in this layout its pages sit at the web
-> root (`/dashboard`, `/patients`, `/report/user_report.php`, …). Old
-> bookmarks to `/clinical-dashboard_v2/…` will 404 unless the host adds
-> redirects. Deploy the whole layout at once — mixing old and new paths on
-> one server breaks the login bounce.
+**Any other static host (or the existing PHP host):** copy the repo contents
+into the web root. PHP is no longer required anywhere.
+
+> **URL change from the PHP era.** Pages that used to be served as
+> `/clinical-dashboard_v2/dashboard` (extensionless, Apache-rewritten) are now
+> `/dashboard.html` at the web root. Old bookmarks will 404 unless the host
+> adds redirects. Deploy the whole layout at once — mixing old and new paths
+> on one server breaks the login bounce.
 
 Before go-live, the backend's Lambda Function URL must replace
-`http://localhost:3001` in five files (seven places):
+`http://localhost:3001` — it appears in **10 files (12 places)** now that the
+shared head is inlined into each page. Do it as one search-and-replace:
 
-1. `head.php` (feeds `window.NODE_API` to most pages)
-2. `report/user_report.php` — three fallbacks
-3. `clinical-v2/login-port/index.html`
-4. `clinical-v2/login-port/forgot-password/index.php`
-5. `clinical-v2/login-port/change-password/index.php`
+```
+grep -rln "localhost:3001" --include=*.html .    # lists all 10 files
+```
+
+Replace every `http://localhost:3001` with the Function URL (no trailing
+slash) and redeploy.
+
+## Re-running the differential tests
+
+```
+php tools/diff-methods.php  > php.txt
+node tools/diff-methods.mjs > js.txt
+diff php.txt js.txt            # must be empty
+```

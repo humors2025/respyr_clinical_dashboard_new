@@ -1,13 +1,13 @@
-<?php
-// A valid reset token (from the OTP step) is required to view this page.
-if (!isset($_GET['token']) || empty(trim($_GET['token']))) {
-    header("Location: ../");
-    exit;
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        // A valid reset token (from the OTP step) is required to view this page.
+        (function () {
+            var t = new URLSearchParams(location.search).get("token");
+            if (!t || !t.trim()) location.replace("../");
+        })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Respyr Portal &mdash; New password</title>

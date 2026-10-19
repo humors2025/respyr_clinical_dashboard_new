@@ -1,0 +1,9 @@
+{
+  "scores": [-10, 0, 50, 69, 69.9, "69.99", 70, 75, 79, 79.9, "79.999", 80, 85, 100, 105, "85", " 85 ", "", "abc", "12e1", "1e2", "0.5", ".5", "005", 23.455, 24.005],
+  "types": ["sugar", "gut", "respiratory", "liver", "SUGAR", "Liver", "bogus"],
+  "names": ["sugarScore", "liverScore", "respiratoryScore", "gutScore", "nope"],
+  "bmi": [[70,170],[0,170],[70,0],[-5,170],[55.5,162.3],[80,175.26],[23.455,100]],
+  "bmr": [[70,170,30,"male"],[70,170,30,"female"],[70,170,30,"Male"],[70,170,30,"FEMALE"],[70,170,30,"other"],[0,170,30,"male"],[55.5,162.3,42.5,"female"]],
+  "timestamps": [1746167700, 0, 1760880000, "abc", 1577836800],
+  "respjson": ["{\"Comparison_with_Predicted(%)\":{\"FEV1_vs_Predicted\":22.48,\"FVC_vs_Predicted\":32.76,\"Ratio_vs_Predicted\":68.62},\"Predicted\":{\"FEV1(L)\":3.42,\"FEV1/FVC_Ratio(%)\":83.86,\"FVC(L)\":4.08},\"Respiratory Score(%)\":{\"Respiratory Score(%)\":51.239135724438},\"Respyr_Measured\":{\"FEV1(L)\":0.77,\"FEV1/FVC Ratio(%)\":57.55,\"FVC(L)\":1.338,\"PEF(L/min)\":103.33}}", "", "garbage", "{\"Predicted\":{\"FEV1(L)\":3.1}}"]
+}

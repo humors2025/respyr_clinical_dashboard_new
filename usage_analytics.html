@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    
+<head>
+
+    <!-- ===== LOCAL DEV CONFIG (single place to swap for Lambda) ===== -->
+    <script>
+      // Base URL of the Node backend the dashboard talks to.
+      window.NODE_API = "http://localhost:3001";            // local testing
+      // window.NODE_API = "<DASHBOARD-LAMBDA-URL>"; // prod — the DASHBOARD backend's own Function URL (NOT the app's)
+
+      // Attach the signed-in user's token to API calls. Dashboard endpoints
+      // now REQUIRE it server-side â€” sign in at /clinical-v2/ to use the app.
+      window.authHeaders = function (extra) {
+        var t = null;
+        try { t = localStorage.getItem("jwt_token"); } catch (e) {}
+        var h = extra ? Object.assign({}, extra) : {};
+        if (t) h["Authorization"] = "Bearer " + t;
+        return h;
+      };
+    </script>
+    <!-- ============================================================= -->
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="https://respyr.in/fav.svg" type="image/x-icon" />
+    <title>Respyr Portal</title>
+
+    <!-- ========== All CSS files linkup ========= -->
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/css/lineicons.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="assets/css/materialdesignicons.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="assets/css/fullcalendar.css" />
+    <link rel="stylesheet" href="assets/css/fullcalendar.css" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/style.css?v=2" />
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.dataTables.css" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+  <link rel="stylesheet" href="assets/css/respyr-polish.css?v=106" />
+
+  </head>
+
+
+    <body>
+        <style>
+    .close {
+        display: none;
+    }
+
+    @media only screen and (min-width: 992px) and (max-width: 1199px), only screen and (min-width: 768px) and (max-width: 991px), (max-width: 767px) {
+        .close {
+            display: block;
+        }
+
+        #close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: none;
+        }
+    }
+</style>
+
+
+<aside class="sidebar-nav-wrapper">
+    <div class="navbar-logo">
+        <a href="./dashboard.html">
+            <img src="./assets/images/logo/logo.svg" alt="logo" />
+        </a>
+    </div>
+    <button id="close" class="close" aria-label="Close menu"><i class="lni lni-close"></i></button>
+    <nav class="sidebar-nav">
+        <p class="rsp-menulabel">Menu</p>
+        <ul>
+
+
+
+  <li class="nav-item">
+            <a
+              href="./dashboard.html"
+            >
+              <span class="icon">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_30022_4938)">
+<path d="M7.4974 1.66797H2.4974C2.27638 1.66797 2.06442 1.75577 1.90814 1.91205C1.75186 2.06833 1.66406 2.28029 1.66406 2.5013V7.5013C1.66406 7.72232 1.75186 7.93428 1.90814 8.09056C2.06442 8.24684 2.27638 8.33464 2.4974 8.33464H7.4974C7.71841 8.33464 7.93037 8.24684 8.08665 8.09056C8.24293 7.93428 8.33073 7.72232 8.33073 7.5013V2.5013C8.33073 2.28029 8.24293 2.06833 8.08665 1.91205C7.93037 1.75577 7.71841 1.66797 7.4974 1.66797ZM7.4974 11.668H2.4974C2.27638 11.668 2.06442 11.7558 1.90814 11.912C1.75186 12.0683 1.66406 12.2803 1.66406 12.5013V17.5013C1.66406 17.7223 1.75186 17.9343 1.90814 18.0906C2.06442 18.2468 2.27638 18.3346 2.4974 18.3346H7.4974C7.71841 18.3346 7.93037 18.2468 8.08665 18.0906C8.24293 17.9343 8.33073 17.7223 8.33073 17.5013V12.5013C8.33073 12.2803 8.24293 12.0683 8.08665 11.912C7.93037 11.7558 7.71841 11.668 7.4974 11.668ZM17.4974 1.66797H12.4974C12.2764 1.66797 12.0644 1.75577 11.9081 1.91205C11.7519 2.06833 11.6641 2.28029 11.6641 2.5013V7.5013C11.6641 7.72232 11.7519 7.93428 11.9081 8.09056C12.0644 8.24684 12.2764 8.33464 12.4974 8.33464H17.4974C17.7184 8.33464 17.9304 8.24684 18.0867 8.09056C18.2429 7.93428 18.3307 7.72232 18.3307 7.5013V2.5013C18.3307 2.28029 18.2429 2.06833 18.0867 1.91205C17.9304 1.75577 17.7184 1.66797 17.4974 1.66797Z" stroke="#308BF9" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M11.6641 11.668H18.3307M14.9974 15.0013H18.3307M11.6641 18.3346H18.3307" stroke="#308BF9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_30022_4938">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+
+
+
+              </span>
+              <span class="text">Dashboard</span>
+            </a>
+          </li>
+
+
+  <li class="nav-item">
+            <a
+              href="./history.html"
+            >
+              <span class="icon">
+
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M4.9974 3.02292C4.61132 3.29141 4.29597 3.64937 4.07829 4.06621C3.86062 4.48306 3.74709 4.94641 3.7474 5.41667C3.74713 5.91993 3.87716 6.41469 4.12483 6.85279C4.3725 7.29089 4.72938 7.65741 5.16073 7.91667M14.9974 3.02292C15.3835 3.29141 15.6988 3.64937 15.9165 4.06621C16.1342 4.48306 16.2477 4.94641 16.2474 5.41667C16.2478 5.887 16.1343 6.35043 15.9166 6.76735C15.6989 7.18428 15.3835 7.5423 14.9974 7.81083M18.3307 17.5V17C18.3307 15.1333 18.3307 14.2 17.9674 13.4867C17.6478 12.8595 17.1379 12.3496 16.5107 12.03M1.66406 17.5V17C1.66406 15.1333 1.66406 14.2 2.0274 13.4867C2.34697 12.8595 2.85688 12.3496 3.48406 12.03M9.9974 8.33333C10.3804 8.33333 10.7597 8.25789 11.1136 8.11132C11.4674 7.96474 11.789 7.7499 12.0598 7.47906C12.3306 7.20822 12.5455 6.88669 12.692 6.53283C12.8386 6.17896 12.9141 5.79969 12.9141 5.41667C12.9141 5.03364 12.8386 4.65437 12.692 4.30051C12.5455 3.94664 12.3306 3.62511 12.0598 3.35427C11.789 3.08343 11.4674 2.86859 11.1136 2.72202C10.7597 2.57544 10.3804 2.5 9.9974 2.5C9.22385 2.5 8.48198 2.80729 7.935 3.35427C7.38802 3.90125 7.08073 4.64312 7.08073 5.41667C7.08073 6.19021 7.38802 6.93208 7.935 7.47906C8.48198 8.02604 9.22385 8.33333 9.9974 8.33333ZM4.9974 16.6667V17.5H14.9974V16.6667C14.9974 15.1137 14.9974 14.3371 14.7436 13.7242C14.4052 12.9075 13.7563 12.2586 12.9395 11.9204C12.3274 11.6667 11.5507 11.6667 9.9974 11.6667C8.44406 11.6667 7.66781 11.6667 7.05531 11.9204C6.65084 12.0879 6.28334 12.3335 5.97377 12.643C5.66421 12.9526 5.41866 13.3201 5.25115 13.7246C4.9974 14.3371 4.9974 15.1137 4.9974 16.6667Z" stroke="#A1A1A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+
+              </span>
+              <span class="text">Test history</span>
+            </a>
+          </li>
+
+  <li class="nav-item">
+            <a
+              href="./patients.html"
+            >
+              <span class="icon">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M4.9974 3.02292C4.61132 3.29141 4.29597 3.64937 4.07829 4.06621C3.86062 4.48306 3.74709 4.94641 3.7474 5.41667C3.74713 5.91993 3.87716 6.41469 4.12483 6.85279C4.3725 7.29089 4.72938 7.65741 5.16073 7.91667M14.9974 3.02292C15.3835 3.29141 15.6988 3.64937 15.9165 4.06621C16.1342 4.48306 16.2477 4.94641 16.2474 5.41667C16.2478 5.887 16.1343 6.35043 15.9166 6.76735C15.6989 7.18428 15.3835 7.5423 14.9974 7.81083M18.3307 17.5V17C18.3307 15.1333 18.3307 14.2 17.9674 13.4867C17.6478 12.8595 17.1379 12.3496 16.5107 12.03M1.66406 17.5V17C1.66406 15.1333 1.66406 14.2 2.0274 13.4867C2.34697 12.8595 2.85688 12.3496 3.48406 12.03M9.9974 8.33333C10.3804 8.33333 10.7597 8.25789 11.1136 8.11132C11.4674 7.96474 11.789 7.7499 12.0598 7.47906C12.3306 7.20822 12.5455 6.88669 12.692 6.53283C12.8386 6.17896 12.9141 5.79969 12.9141 5.41667C12.9141 5.03364 12.8386 4.65437 12.692 4.30051C12.5455 3.94664 12.3306 3.62511 12.0598 3.35427C11.789 3.08343 11.4674 2.86859 11.1136 2.72202C10.7597 2.57544 10.3804 2.5 9.9974 2.5C9.22385 2.5 8.48198 2.80729 7.935 3.35427C7.38802 3.90125 7.08073 4.64312 7.08073 5.41667C7.08073 6.19021 7.38802 6.93208 7.935 7.47906C8.48198 8.02604 9.22385 8.33333 9.9974 8.33333ZM4.9974 16.6667V17.5H14.9974V16.6667C14.9974 15.1137 14.9974 14.3371 14.7436 13.7242C14.4052 12.9075 13.7563 12.2586 12.9395 11.9204C12.3274 11.6667 11.5507 11.6667 9.9974 11.6667C8.44406 11.6667 7.66781 11.6667 7.05531 11.9204C6.65084 12.0879 6.28334 12.3335 5.97377 12.643C5.66421 12.9526 5.41866 13.3201 5.25115 13.7246C4.9974 14.3371 4.9974 15.1137 4.9974 16.6667Z" stroke="#A1A1A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+
+
+              </span>
+              <span class="text">Subjects</span>
+            </a>
+          </li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        </ul>
+    </nav>
+</aside>
+
+<script>
+/* Highlight the nav item of the CURRENT page (the template never set one,
+   so "Dashboard" always looked selected via its hardcoded blue icon). */
+(function () {
+    var page = (location.pathname.split('/').pop() || 'dashboard').replace(/\.(php|html)$/, '') || 'dashboard';
+    var alias = { data_table: 'history', 'view-profile': 'history', 'view-detail': 'history', usage_analytics: 'history', index: 'dashboard' };
+    if (alias[page]) page = alias[page];
+    document.querySelectorAll('.sidebar-nav .nav-item > a').forEach(function (a) {
+        var target = (a.getAttribute('href') || '').replace('./', '').replace(/\.(php|html)$/, '');
+        if (target === page) a.classList.add('active');
+    });
+})();
+</script>
+
+
+
+
+
+
+
+
+        <main class="main-wrapper">
+            <header class="header rsp-hd">
+  <div class="rsp-hd-in">
+
+    <!-- menu button (visible only when the sidebar is hidden) -->
+    <div class="menu-toggle-btn">
+      <button id="menu-toggle" class="rsp-hd-burger" aria-label="Open menu">
+        <i class="lni lni-menu"></i>
+      </button>
+    </div>
+
+    <!-- greeting -->
+    <div class="rsp-hd-greet">
+      <h6><span id="rspGreetTime">Hello</span>, <span id="rspGreetName"></span></h6>
+      <p id="rspGreetDate"></p>
+    </div>
+
+    <!-- tools -->
+    <div class="rsp-hd-tools">
+      <!-- no header search: the dashboard searches inside the test log card
+           instead (magnifier beside the score tabs) -->
+
+      <!-- date picker — #dateInput + .input-group-text are wired up in dashboard.php -->
+      <div class="input-group rsp-hd-date">
+        <span class="input-group-text"><i class="fa-solid fa-calendar-days"></i></span>
+        <input type="text" id="dateInput" class="form-control" />
+      </div>
+
+      <span class="rsp-hd-sep"></span>
+    </div>
+
+    <!-- profile -->
+    <div class="profile-box dropdown">
+      <button class="rsp-hd-user" type="button" id="profile" data-bs-toggle="dropdown" aria-expanded="false">
+        <img id="clinicLogo" alt="" class="rsp-hd-ava" />
+        <span class="rsp-hd-user-txt">
+          <strong id="rspGreetName2"></strong>
+          <small>Administrator</small>
+        </span>
+        <i class="fa-solid fa-chevron-down rsp-hd-chev"></i>
+        <span id="welcome2" hidden></span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
+        <li><a href="./admin-profile.html"><i class="fa-solid fa-user"></i> Profile</a></li>
+        <li><a href="#0" id="logoutBtn" onclick="logout()"><i class="lni lni-exit"></i> Sign Out</a></li>
+      </ul>
+    </div>
+
+  </div>
+</header>
+
+<script>
+  const clinicName = localStorage.getItem("login_id");
+// clinic logo now comes from our own dashboard backend (the old
+  // humorstech.com call could hang for 20s, which is why the placeholder
+  // person icon used to sit there before flipping to the initial)
+  const logoImg = document.getElementById("clinicLogo");
+  const firstLetter = clinicName.charAt(0).toUpperCase();
+
+  const colorMap = {
+    A: "#FF6B6B", B: "#6BCB77", C: "#4D96FF", D: "#FFB74D", E: "#9575CD", F: "#26A69A",
+    G: "#FF7043", H: "#42A5F5", I: "#66BB6A", J: "#FFCA28", K: "#AB47BC", L: "#26C6DA",
+    M: "#EC407A", N: "#8D6E63", O: "#5C6BC0", P: "#9CCC65", Q: "#29B6F6", R: "#F06292",
+    S: "#7986CB", T: "#D4E157", U: "#00ACC1", V: "#FF8A65", W: "#BA68C8", X: "#4DB6AC",
+    Y: "#FFD54F", Z: "#90CAF9"
+  };
+
+  function generateInitialImage(letter) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 40;
+    canvas.height = 40;
+    const ctx = canvas.getContext("2d");
+
+    const bgColor = colorMap[letter] || "#607D8B";
+
+    ctx.beginPath();
+    ctx.arc(20, 20, 20, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fillStyle = bgColor;
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 20px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(letter, 20, 22);
+
+    return canvas.toDataURL("image/png");
+  }
+
+  // Show the clinic initial straight away so the avatar never flashes a
+  // generic person icon while a network call is in flight.
+  logoImg.src = generateInitialImage(firstLetter);
+
+  fetch(`${window.NODE_API}/api/clinic/logos`, {
+    method: "POST",
+    headers: window.authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ login_id: clinicName }),
+  })
+    .then(res => (res.ok ? res.json() : Promise.reject(new Error("HTTP " + res.status))))
+    .then(data => {
+      const src = data && data.status === "success" ? (data.data || {}).logo_src : null;
+      if (src) logoImg.src = src;   // real logo found — upgrade from the initial
+    })
+    .catch(error => {
+      // no logo uploaded, or the lookup failed: the initial already stands in
+      console.warn("Clinic logo unavailable:", error.message);
+    });
+
+  // Greeting block: time-of-day + clinic name + today's date in words
+  (function () {
+    const h = new Date().getHours();
+    const g = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+    const gt = document.getElementById("rspGreetTime"); if (gt) gt.textContent = g;
+    const n1 = document.getElementById("rspGreetName"); if (n1) n1.textContent = clinicName || "";
+    const n2 = document.getElementById("rspGreetName2"); if (n2) n2.textContent = clinicName || "";
+    const d = document.getElementById("rspGreetDate");
+    if (d) d.textContent = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  })();
+</script>
+
+<!-- <button id="captureBtn">Capture Full Page</button> -->
+
+            <section class="section">
+                <div class="container-fluid">
+                    <div class="row pt-30">
+                        <div class="col-xl-4 col-lg-4 col-sm-6">
+                            <div class="icon-card card-first mb-30">
+                                <div class="caldender-container">
+                                    <p class="current-date"><span data-rsp-day></span></p>
+                                    <div class="current-month"><p><span data-rsp-mon></span></p></div>
+                                </div>
+                                <div class="patients-container">
+                                    <p class="numbers" id="dataCount">NA</p>
+                                    <p class="text">Subjects taken test</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-5 col-lg-4 col-sm-6">
+                            <div class="icon-card mb-30 card-patients-data">
+                                <div class="dropdown">
+                                    <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Sugar score
+                                    </button>
+                                    <ul class="dropdown-menu">
+					<li><a class="dropdown-item" href="#">Sugar score</a></li>
+                                        <li><a class="dropdown-item" href="#">Liver score</a></li>
+                                        <li><a class="dropdown-item" href="#">Respiratory score</a></li>
+                                        <li><a class="dropdown-item" href="#">Gut score</a></li>
+                                    </ul>
+                                </div>
+                                <div class="patients-data-wrapper">
+                                    <div class="patients-wrapper good">
+                                        <h3 class="value" id="goodCount">12</h3>
+                                        <h4>Subjects</h4>
+                                        <h5>Good score</h5>
+                                    </div>
+ 
+                                    <div class="patients-wrapper fair">
+                                        <h3 class="value" id="fairCount">14</h3>
+                                        <h4>Subjects</h4>
+                                        <h5>Fair score</h5>
+                                    </div>
+
+                                    <div class="patients-wrapper poor">
+                                        <h3 class="value"  id="poorCount">15</h3>
+                                        <h4>Subjects</h4>
+                                        <h5>Poor score</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-4 col-sm-6">
+                            <div class="icon-card mb-30">
+
+			<div style="width: 120px; height: 120px;">
+  <canvas id="genderChart"></canvas>
+</div>
+<div>
+</div>
+
+
+			</div>
+                        </div>
+                    </div>
+
+                    <div class="title-wrapper pt-30">
+                        <div class="row align-items-center">
+                            <div class="col-md-12">
+                                <div class="title d-flex align-items-center flex-wrap">
+                                    <h2 class="mr-40">Test Logs</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="card-style mb-30">
+                                <div class="table-wrapper">
+                                      <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+  <style>
+
+
+
+	td[data-label="Tests taken"] {
+
+text-align: center;
+    vertical-align: middle;
+	}
+	th[data-label="Tests taken"] {
+  	text-align: center;
+	}
+
+
+
+    .card-style{
+      padding:0;
+    }
+
+.text-primary{
+
+color:#308BF9;
+}
+
+
+
+
+
+  </style>
+
+<div id="scoreContainer"><p>Loading scores...</p></div>
+<div id="scorePager" class="rsp-pager" style="display:none"></div>
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+
+<script>
+  let originalData = [];
+
+  // ---- pagination state (server-side; 20 subjects per page) ----
+  const PAGE_LIMIT = 20;
+  let curPage = 1;
+  let curSearch = "";
+  let histLoginId = "";
+
+  function checkTokenAndRender() {
+    const token = localStorage.getItem("jwt_token");
+
+    if (!token) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    try {
+      const decoded = jwt_decode(token);
+      const now = Math.floor(Date.now() / 1000);
+
+      if (decoded.exp < now) throw new Error("Token expired");
+
+      document.getElementById("welcome2").textContent = `Welcome, ${decoded.username || decoded.login_id}!`;
+      histLoginId = decoded.username || decoded.login_id;
+
+      loadScores();
+    } catch (err) {
+      console.warn("Invalid or expired token:", err.message);
+      localStorage.removeItem("jwt_token");
+      window.location.href = "./clinical-v2/";
+    }
+  }
+
+  // Typing fast fired several requests; whichever answered LAST won, so a
+  // stale response could paint filtered rows under an unfiltered pager.
+  // Only the newest request is allowed to touch the DOM.
+  let scoresReqId = 0;
+
+  function loadScores() {
+    const myReq = ++scoresReqId;
+    fetch(`${window.NODE_API}/api/dashboard/scores`, {
+      method: "POST",
+      headers: window.authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ login_id: histLoginId, page: curPage, limit: PAGE_LIMIT, search: curSearch }),
+    })
+      .then((res) => res.json())
+      .then((resp) => {
+        if (myReq !== scoresReqId) return; // a newer search/page won
+        const container = document.getElementById("scoreContainer");
+
+        if (resp && resp.error) {
+          // the backend's raw error text is not rendered as HTML
+          container.textContent = "Could not load the test logs. Please try again.";
+          return;
+        }
+
+        const data = resp && Array.isArray(resp.data) ? resp.data : [];
+        originalData = data;
+
+        const dc = document.getElementById("dataCount");
+        if (dc) dc.textContent = `${resp.total ?? data.length}`;
+
+        renderTable(data);
+        renderPager(resp.page || 1, resp.limit || PAGE_LIMIT, resp.total || 0);
+        // live count under the page heading
+        const sub = document.getElementById("pageSub");
+        if (sub) {
+          const n = resp.total || 0;
+          const word = n === 1 ? "subject" : "subjects";
+          sub.textContent = curSearch
+            ? n + " matching " + word
+            : "The most recent test for each of " + n + " " + word;
+        }
+
+        updateScoreCounts(currentScoreKeyForCounts, data);
+        renderGenderChart(data);
+      })
+      .catch((err) => {
+        console.warn("API fetch failed:", err.message);
+        document.getElementById("scoreContainer").innerHTML =
+          "<p style='color:red;'>Failed to load scores. Please try again.</p>";
+      });
+  }
+
+  function renderPager(page, limit, total) {
+    const el = document.getElementById("scorePager");
+    if (!el) return;
+    const pages = Math.max(1, Math.ceil(total / limit));
+    const from = total === 0 ? 0 : (page - 1) * limit + 1;
+    const to = Math.min(total, page * limit);
+    el.style.display = total > 0 ? "flex" : "none";
+    el.innerHTML = `
+      <span class="rsp-pager-info">Showing ${from}–${to} of ${total} subjects</span>
+      <div class="rsp-pager-controls">
+        <button class="rsp-page-btn" ${page <= 1 ? "disabled" : ""} data-go="${page - 1}"><i class="fa-solid fa-chevron-left"></i></button>
+        <span class="rsp-pager-page">Page ${page} of ${pages}</span>
+        <button class="rsp-page-btn" ${page >= pages ? "disabled" : ""} data-go="${page + 1}"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>`;
+    el.querySelectorAll(".rsp-page-btn").forEach((b) =>
+      b.addEventListener("click", () => { curPage = parseInt(b.dataset.go, 10); loadScores(); })
+    );
+  }
+
+  // ---- stats + gender donut (elements live in a hidden section of history.php;
+  //      they now reflect the current page only) ----
+  let currentScoreKeyForCounts = "Db_Score";
+
+  function updateScoreCounts(scoreType, data) {
+    const g = document.getElementById("goodCount");
+    const f = document.getElementById("fairCount");
+    const p = document.getElementById("poorCount");
+    if (!g || !f || !p) return;
+    let good = 0, fair = 0, poor = 0;
+    data.forEach((entry) => {
+      const value = parseFloat(entry[scoreType]);
+      if (isNaN(value)) return;
+      if (value >= 80) good++;
+      else if (value >= 70 && value < 80) fair++;
+      else poor++;
+    });
+    g.textContent = good;
+    f.textContent = fair;
+    p.textContent = poor;
+  }
+
+  function renderGenderChart(data) {
+    const genderCanvas = document.getElementById("genderChart");
+    if (!genderCanvas) return;
+    const maleCount = data.filter((item) => item.gender?.toLowerCase() === "male").length;
+    const femaleCount = data.filter((item) => item.gender?.toLowerCase() === "female").length;
+
+    // On back-navigation the page is restored from bfcache and this runs
+    // again — destroy the previous chart or Chart.js throws "canvas is
+    // already in use", which lands in .catch() and wipes the table.
+    const existingGenderChart = Chart.getChart(genderCanvas);
+    if (existingGenderChart) existingGenderChart.destroy();
+    const ctx = genderCanvas.getContext("2d");
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Male", "Female"],
+        datasets: [{
+          data: [maleCount, femaleCount],
+          backgroundColor: ["#90C3F9", "#1B4E9B"],
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "bottom" },
+        },
+      },
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".dropdown-item").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        e.preventDefault();
+        const label = e.target.textContent.trim().toLowerCase();
+        let key = "";
+
+        if (label === "sugar score") key = "Db_Score";
+        else if (label === "liver score") key = "liver_score";
+        else if (label === "respiratory score") key = "Blow_Score";
+        else if (label === "gut score") key = "Gut_Score_per";
+
+        const toggleBtn = document.querySelector(".btn.dropdown-toggle");
+        if (toggleBtn) toggleBtn.textContent = e.target.textContent;
+        if (key) { currentScoreKeyForCounts = key; updateScoreCounts(key, originalData); }
+      });
+    });
+  });
+
+  // "09/04/2026 18:13:59" (US order, ambiguous) -> "04 Sep 2026, 18:13"
+  function fmtLastTested(dttm) {
+    const m = String(dttm || "").match(/^(\d{2})\/(\d{2})\/(\d{4})[ T](\d{2}):(\d{2})/);
+    if (!m) return dttm || "";
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return `${m[2]} ${months[parseInt(m[1], 10) - 1]} ${m[3]}, ${m[4]}:${m[5]}`;
+  }
+
+  // Builds the full report URL on click — including the breath-pressure data
+  // the report's respiratory section needs (missing from the old static links).
+  function openScoreReport(i) {
+    const s = (window.__scoreRows || [])[i];
+    if (!s) return;
+    // the breath trace is handed over in sessionStorage, not the URL (too big)
+    const blowKey = "rspblow:" + Date.now() + ":" + Math.random().toString(36).slice(2, 8);
+    try { sessionStorage.setItem(blowKey, s.blow_raw_values ?? ""); } catch (e) { /* storage blocked */ }
+    const qs = new URLSearchParams({
+      login_id: s.login_id, profile_id: s.profile_id,
+      sugar: s.Db_Score, liver: s.liver_score, resp: s.Blow_Score, guts: s.Gut_Score_per,
+      acetone_ppm: s.acetone_ppm ?? "NA", ethnol_ppm: s.ethnol_ppm ?? "NA", h2_ppm: s.h2_ppm ?? "NA",
+      bk: blowKey,
+      dttm: s.dttm, name: s.name ?? "", age: s.age ?? "", gender: s.gender ?? "",
+      height: s.height ?? "", weight: s.weight ?? "",
+    });
+    openReportModal("./report/user_report.html?" + qs.toString());
+  }
+
+  // Subject names are typed in the mobile app, so they are untrusted input:
+  // escape before building row HTML.
+  function esc(v) {
+    return String(v ?? "").replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function renderTable(filteredData) {
+    // rows kept for the report links: the breath blobs (blow_raw_values /
+    // respiratory_fvc_json) are too big to bake into every href, so the
+    // report URL is built lazily on click from this array.
+    window.__scoreRows = filteredData;
+    const rows = filteredData.map((score, idx) => `
+      <tr class="data-row">
+        <td data-label="Subject Name">
+          <div class="emplyee-name-wrapper">
+            <h2 class="employee-name">${esc(score.name || "N/A")}</h2>
+            <div class="emp_id">
+              <span>${esc(score.profile_id)}</span>
+              <div class="dot"></div>
+              <span>Last tested ${fmtLastTested(score.dttm)}</span>
+            </div>
+          </div>
+        </td>
+        <td data-label="Tests taken">${score.count_taken || 0}</td>
+        <td data-label="Sugar score">${score.Db_Score || 0}%</td>
+        <td data-label="Liver score">${score.liver_score || 0}%</td>
+        <td data-label="Respiratory score">${score.Blow_Score || 0}%</td>
+        <td data-label="Gut score">${score.Gut_Score_per || 0}%</td>
+        <td>
+          <a class="btn btn-tranperent btn-sm" data-tip="View profile"
+             href='view-profile?login_id=${encodeURIComponent(score.login_id)}&profile_id=${encodeURIComponent(score.profile_id)}&sugar=${encodeURIComponent(score.Db_Score)}&liver=${encodeURIComponent(score.liver_score)}&resp=${encodeURIComponent(score.Blow_Score)}&guts=${encodeURIComponent(score.Gut_Score_per)}&dttm=${encodeURIComponent(score.dttm)}&name=${encodeURIComponent(score.name)}'>
+            <i class="fa-solid fa-user text-primary"></i>
+          </a>
+          <a class="btn btn-tranperent btn-sm" data-tip="Open report"
+             href='#' onclick='openScoreReport(${idx}); return false;'>
+            <i class="fa-solid fa-file-lines text-primary"></i>
+          </a>
+        </td>
+      </tr>
+    `).join('');
+
+    document.getElementById("scoreContainer").innerHTML = `
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Subject Name</th>
+            <th scope="col" data-label="Tests taken">Tests Taken</th>
+            <th scope="col" >Sugar score</th>
+            <th scope="col" >Liver score</th>
+            <th scope="col">Respiratory score</th>
+            <th scope="col">Gut score</th>
+            <th scope="col">View</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  function logout() {
+    localStorage.removeItem("jwt_token");
+    window.location.href = "./clinical-v2/";
+  }
+
+  window.addEventListener("pageshow", checkTokenAndRender);
+
+  // 🔍 Search — server-side now (covers ALL subjects, not just the loaded page),
+  // debounced so we don't fire a request per keystroke.
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("search");
+    if (searchInput) {
+      let searchTimer = null;
+      searchInput.addEventListener("input", function () {
+        clearTimeout(searchTimer);
+        const q = this.value.trim();
+        searchTimer = setTimeout(() => {
+          curSearch = q;
+          curPage = 1;
+          loadScores();
+        }, 350);
+      });
+    }
+  });
+</script>
+
+<script>
+  function toggleTooltip(el) {
+    const menu = el.querySelector('.tooltip-menu');
+    const isOpen = menu.style.display === 'block';
+    document.querySelectorAll('.tooltip-menu').forEach(m => m.style.display = 'none');
+    menu.style.display = isOpen ? 'none' : 'block';
+  }
+
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.tooltip-container')) {
+      document.querySelectorAll('.tooltip-menu').forEach(m => m.style.display = 'none');
+    }
+  });
+</script>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <footer class="footer">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6 order-last order-md-first">
+                <div class="copyright text-center text-md-start">
+                    <p class="text-sm">
+                        Designed and Developed by
+                        <a href="https://humorstech.com" target="_blank" rel="noopener">
+                            Humorstech Pvt Ltd
+                        </a>
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="terms d-flex justify-content-center justify-content-md-end">
+                    <a href="https://respyr.in/terms-conditions/" class="text-sm" target="_blank" rel="noopener">Terms &amp; Conditions</a>
+                    <a href="https://respyr.in/privacy_policy/" class="text-sm ml-15" target="_blank" rel="noopener">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- In-page report dialog: openReportModal(url) loads the report in an
+     iframe overlay instead of navigating away. Esc / backdrop / × close it. -->
+<div class="rsp-repmodal" id="rspRepModal" hidden>
+    <div class="rsp-repmodal-back"></div>
+    <div class="rsp-repmodal-card" role="dialog" aria-modal="true" aria-label="Test report">
+        <div class="rsp-repmodal-head">
+            <span class="rsp-repmodal-title">Test report</span>
+            <div class="rsp-repmodal-actions">
+                <button type="button" id="rspRepDl" class="rsp-repmodal-btn dark" disabled><i class="fa-solid fa-download"></i>Download pdf</button>
+                <button type="button" id="rspRepSend" class="rsp-repmodal-btn blue" disabled><i class="fa-solid fa-envelope"></i>Send pdf</button>
+                <a id="rspRepOpenTab" href="#" target="_blank" rel="noopener" title="Open full page"><i class="fa-solid fa-up-right-from-square"></i></a>
+                <button type="button" id="rspRepClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="rsp-repmodal-body"><iframe id="rspRepFrame" title="Test report"></iframe></div>
+    </div>
+</div>
+<script>
+    (function () {
+        const modal = document.getElementById("rspRepModal");
+        const frame = document.getElementById("rspRepFrame");
+        const tabLink = document.getElementById("rspRepOpenTab");
+
+        // The report is a fixed ~840px A4 document; on narrower dialogs it is
+        // zoomed down so the whole page width is visible without h-scrolling.
+        function fit() {
+            const body = modal.querySelector(".rsp-repmodal-body");
+            const w = body.clientWidth;
+            frame.style.zoom = w < 860 ? (w / 860) : 1;
+        }
+
+        // Download / Send live in the report page — the header buttons just
+        // forward the click into the iframe once it has loaded.
+        const dlBtn = document.getElementById("rspRepDl");
+        const sendBtn = document.getElementById("rspRepSend");
+        function proxyClick(id) {
+            try {
+                const doc = frame.contentDocument;
+                const b = doc && doc.getElementById(id);
+                if (b) b.click();
+            } catch (e) {}
+        }
+        dlBtn.addEventListener("click", () => proxyClick("downloadBtn"));
+        sendBtn.addEventListener("click", () => proxyClick("emailBtn"));
+        frame.addEventListener("load", () => {
+            const ready = frame.src && frame.src.indexOf("about:blank") === -1;
+            dlBtn.disabled = !ready;
+            sendBtn.disabled = !ready;
+        });
+
+        window.openReportModal = function (url) {
+            dlBtn.disabled = true;
+            sendBtn.disabled = true;
+            frame.src = url;
+            tabLink.href = url;
+            modal.hidden = false;
+            document.body.classList.add("rsp-repmodal-open");
+            fit();
+        };
+
+        function close() {
+            // Blanking the iframe kills an in-flight PDF build or email send,
+            // which used to happen silently. Ask first if the report says it is busy.
+            let busy = false;
+            try { busy = !!(frame.contentWindow && frame.contentWindow.rspReportBusy); } catch (e) { /* cross-doc */ }
+            if (busy && !confirm("A report is still being sent. Close anyway and cancel it?")) return;
+
+            modal.hidden = true;
+            document.body.classList.remove("rsp-repmodal-open");
+            frame.src = "about:blank"; // stop any in-flight report work
+        }
+
+        modal.querySelector(".rsp-repmodal-back").addEventListener("click", close);
+        document.getElementById("rspRepClose").addEventListener("click", close);
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) close(); });
+        window.addEventListener("resize", () => { if (!modal.hidden) fit(); });
+    })();
+</script>
+
+        </main>
+        <script src="assets/js/bootstrap.bundle.min.js"></script>
+        <script src="assets/js/Chart.min.js"></script>
+        <script src="assets/js/dynamic-pie-chart.js"></script>
+        <script src="assets/js/moment.min.js"></script>
+        <script src="assets/js/fullcalendar.js"></script>
+        <script src="assets/js/jvectormap.min.js"></script>
+        <script src="assets/js/world-merc.js"></script>
+        <script src="assets/js/polyfill.js"></script>
+        <script src="assets/js/main.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+        <script src="https://cdn.datatables.net/2.3.0/js/dataTables.js"></script>
+<script>
+  document.getElementById("captureBtn").addEventListener("click", function () {
+    html2canvas(document.body, {
+      scale: 2, // higher resolution
+      scrollY: -window.scrollY // ensure top alignment
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = "full-page-screenshot.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  });
+</script>
+
+    <script>
+    // today's day/month chip, in Asia/Kolkata like the PHP used to print
+    (function () {
+        var parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" }).formatToParts(new Date());
+        var get = function (t) { var p = parts.find(function (x) { return x.type === t; }); return p ? p.value : ""; };
+        [["rspChipDay", "day"], ["rspChipMon", "month"]].forEach(function (pair) {
+            var el = document.getElementById(pair[0]); if (el) el.textContent = get(pair[1]);
+        });
+        document.querySelectorAll("[data-rsp-day]").forEach(function (el) { el.textContent = get("day"); });
+        document.querySelectorAll("[data-rsp-mon]").forEach(function (el) { el.textContent = get("month"); });
+    })();
+</script>
+</body>
+</html>

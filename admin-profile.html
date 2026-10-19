@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+
+        <!-- Toast Plugin -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css" />
+
+        
+<head>
+
+    <!-- ===== LOCAL DEV CONFIG (single place to swap for Lambda) ===== -->
+    <script>
+      // Base URL of the Node backend the dashboard talks to.
+      window.NODE_API = "http://localhost:3001";            // local testing
+      // window.NODE_API = "<DASHBOARD-LAMBDA-URL>"; // prod — the DASHBOARD backend's own Function URL (NOT the app's)
+
+      // Attach the signed-in user's token to API calls. Dashboard endpoints
+      // now REQUIRE it server-side â€” sign in at /clinical-v2/ to use the app.
+      window.authHeaders = function (extra) {
+        var t = null;
+        try { t = localStorage.getItem("jwt_token"); } catch (e) {}
+        var h = extra ? Object.assign({}, extra) : {};
+        if (t) h["Authorization"] = "Bearer " + t;
+        return h;
+      };
+    </script>
+    <!-- ============================================================= -->
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="https://respyr.in/fav.svg" type="image/x-icon" />
+    <title>Respyr Portal</title>
+
+    <!-- ========== All CSS files linkup ========= -->
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/css/lineicons.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="assets/css/materialdesignicons.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="assets/css/fullcalendar.css" />
+    <link rel="stylesheet" href="assets/css/fullcalendar.css" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/style.css?v=2" />
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.dataTables.css" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+  <link rel="stylesheet" href="assets/css/respyr-polish.css?v=106" />
+
+  </head>
+
+
+    </head>
+    <body>
+        <script>if (!localStorage.getItem("jwt_token")) location.href = "./clinical-v2/";</script>
+        <style>
+    .close {
+        display: none;
+    }
+
+    @media only screen and (min-width: 992px) and (max-width: 1199px), only screen and (min-width: 768px) and (max-width: 991px), (max-width: 767px) {
+        .close {
+            display: block;
+        }
+
+        #close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: none;
+        }
+    }
+</style>
+
+
+<aside class="sidebar-nav-wrapper">
+    <div class="navbar-logo">
+        <a href="./dashboard.html">
+            <img src="./assets/images/logo/logo.svg" alt="logo" />
+        </a>
+    </div>
+    <button id="close" class="close" aria-label="Close menu"><i class="lni lni-close"></i></button>
+    <nav class="sidebar-nav">
+        <p class="rsp-menulabel">Menu</p>
+        <ul>
+
+
+
+  <li class="nav-item">
+            <a
+              href="./dashboard.html"
+            >
+              <span class="icon">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_30022_4938)">
+<path d="M7.4974 1.66797H2.4974C2.27638 1.66797 2.06442 1.75577 1.90814 1.91205C1.75186 2.06833 1.66406 2.28029 1.66406 2.5013V7.5013C1.66406 7.72232 1.75186 7.93428 1.90814 8.09056C2.06442 8.24684 2.27638 8.33464 2.4974 8.33464H7.4974C7.71841 8.33464 7.93037 8.24684 8.08665 8.09056C8.24293 7.93428 8.33073 7.72232 8.33073 7.5013V2.5013C8.33073 2.28029 8.24293 2.06833 8.08665 1.91205C7.93037 1.75577 7.71841 1.66797 7.4974 1.66797ZM7.4974 11.668H2.4974C2.27638 11.668 2.06442 11.7558 1.90814 11.912C1.75186 12.0683 1.66406 12.2803 1.66406 12.5013V17.5013C1.66406 17.7223 1.75186 17.9343 1.90814 18.0906C2.06442 18.2468 2.27638 18.3346 2.4974 18.3346H7.4974C7.71841 18.3346 7.93037 18.2468 8.08665 18.0906C8.24293 17.9343 8.33073 17.7223 8.33073 17.5013V12.5013C8.33073 12.2803 8.24293 12.0683 8.08665 11.912C7.93037 11.7558 7.71841 11.668 7.4974 11.668ZM17.4974 1.66797H12.4974C12.2764 1.66797 12.0644 1.75577 11.9081 1.91205C11.7519 2.06833 11.6641 2.28029 11.6641 2.5013V7.5013C11.6641 7.72232 11.7519 7.93428 11.9081 8.09056C12.0644 8.24684 12.2764 8.33464 12.4974 8.33464H17.4974C17.7184 8.33464 17.9304 8.24684 18.0867 8.09056C18.2429 7.93428 18.3307 7.72232 18.3307 7.5013V2.5013C18.3307 2.28029 18.2429 2.06833 18.0867 1.91205C17.9304 1.75577 17.7184 1.66797 17.4974 1.66797Z" stroke="#308BF9" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M11.6641 11.668H18.3307M14.9974 15.0013H18.3307M11.6641 18.3346H18.3307" stroke="#308BF9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_30022_4938">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+
+
+
+              </span>
+              <span class="text">Dashboard</span>
+            </a>
+          </li>
+
+
+  <li class="nav-item">
+            <a
+              href="./history.html"
+            >
+              <span class="icon">
+
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M4.9974 3.02292C4.61132 3.29141 4.29597 3.64937 4.07829 4.06621C3.86062 4.48306 3.74709 4.94641 3.7474 5.41667C3.74713 5.91993 3.87716 6.41469 4.12483 6.85279C4.3725 7.29089 4.72938 7.65741 5.16073 7.91667M14.9974 3.02292C15.3835 3.29141 15.6988 3.64937 15.9165 4.06621C16.1342 4.48306 16.2477 4.94641 16.2474 5.41667C16.2478 5.887 16.1343 6.35043 15.9166 6.76735C15.6989 7.18428 15.3835 7.5423 14.9974 7.81083M18.3307 17.5V17C18.3307 15.1333 18.3307 14.2 17.9674 13.4867C17.6478 12.8595 17.1379 12.3496 16.5107 12.03M1.66406 17.5V17C1.66406 15.1333 1.66406 14.2 2.0274 13.4867C2.34697 12.8595 2.85688 12.3496 3.48406 12.03M9.9974 8.33333C10.3804 8.33333 10.7597 8.25789 11.1136 8.11132C11.4674 7.96474 11.789 7.7499 12.0598 7.47906C12.3306 7.20822 12.5455 6.88669 12.692 6.53283C12.8386 6.17896 12.9141 5.79969 12.9141 5.41667C12.9141 5.03364 12.8386 4.65437 12.692 4.30051C12.5455 3.94664 12.3306 3.62511 12.0598 3.35427C11.789 3.08343 11.4674 2.86859 11.1136 2.72202C10.7597 2.57544 10.3804 2.5 9.9974 2.5C9.22385 2.5 8.48198 2.80729 7.935 3.35427C7.38802 3.90125 7.08073 4.64312 7.08073 5.41667C7.08073 6.19021 7.38802 6.93208 7.935 7.47906C8.48198 8.02604 9.22385 8.33333 9.9974 8.33333ZM4.9974 16.6667V17.5H14.9974V16.6667C14.9974 15.1137 14.9974 14.3371 14.7436 13.7242C14.4052 12.9075 13.7563 12.2586 12.9395 11.9204C12.3274 11.6667 11.5507 11.6667 9.9974 11.6667C8.44406 11.6667 7.66781 11.6667 7.05531 11.9204C6.65084 12.0879 6.28334 12.3335 5.97377 12.643C5.66421 12.9526 5.41866 13.3201 5.25115 13.7246C4.9974 14.3371 4.9974 15.1137 4.9974 16.6667Z" stroke="#A1A1A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+
+              </span>
+              <span class="text">Test history</span>
+            </a>
+          </li>
+
+  <li class="nav-item">
+            <a
+              href="./patients.html"
+            >
+              <span class="icon">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M4.9974 3.02292C4.61132 3.29141 4.29597 3.64937 4.07829 4.06621C3.86062 4.48306 3.74709 4.94641 3.7474 5.41667C3.74713 5.91993 3.87716 6.41469 4.12483 6.85279C4.3725 7.29089 4.72938 7.65741 5.16073 7.91667M14.9974 3.02292C15.3835 3.29141 15.6988 3.64937 15.9165 4.06621C16.1342 4.48306 16.2477 4.94641 16.2474 5.41667C16.2478 5.887 16.1343 6.35043 15.9166 6.76735C15.6989 7.18428 15.3835 7.5423 14.9974 7.81083M18.3307 17.5V17C18.3307 15.1333 18.3307 14.2 17.9674 13.4867C17.6478 12.8595 17.1379 12.3496 16.5107 12.03M1.66406 17.5V17C1.66406 15.1333 1.66406 14.2 2.0274 13.4867C2.34697 12.8595 2.85688 12.3496 3.48406 12.03M9.9974 8.33333C10.3804 8.33333 10.7597 8.25789 11.1136 8.11132C11.4674 7.96474 11.789 7.7499 12.0598 7.47906C12.3306 7.20822 12.5455 6.88669 12.692 6.53283C12.8386 6.17896 12.9141 5.79969 12.9141 5.41667C12.9141 5.03364 12.8386 4.65437 12.692 4.30051C12.5455 3.94664 12.3306 3.62511 12.0598 3.35427C11.789 3.08343 11.4674 2.86859 11.1136 2.72202C10.7597 2.57544 10.3804 2.5 9.9974 2.5C9.22385 2.5 8.48198 2.80729 7.935 3.35427C7.38802 3.90125 7.08073 4.64312 7.08073 5.41667C7.08073 6.19021 7.38802 6.93208 7.935 7.47906C8.48198 8.02604 9.22385 8.33333 9.9974 8.33333ZM4.9974 16.6667V17.5H14.9974V16.6667C14.9974 15.1137 14.9974 14.3371 14.7436 13.7242C14.4052 12.9075 13.7563 12.2586 12.9395 11.9204C12.3274 11.6667 11.5507 11.6667 9.9974 11.6667C8.44406 11.6667 7.66781 11.6667 7.05531 11.9204C6.65084 12.0879 6.28334 12.3335 5.97377 12.643C5.66421 12.9526 5.41866 13.3201 5.25115 13.7246C4.9974 14.3371 4.9974 15.1137 4.9974 16.6667Z" stroke="#A1A1A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+
+
+              </span>
+              <span class="text">Subjects</span>
+            </a>
+          </li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        </ul>
+    </nav>
+</aside>
+
+<script>
+/* Highlight the nav item of the CURRENT page (the template never set one,
+   so "Dashboard" always looked selected via its hardcoded blue icon). */
+(function () {
+    var page = (location.pathname.split('/').pop() || 'dashboard').replace(/\.(php|html)$/, '') || 'dashboard';
+    var alias = { data_table: 'history', 'view-profile': 'history', 'view-detail': 'history', usage_analytics: 'history', index: 'dashboard' };
+    if (alias[page]) page = alias[page];
+    document.querySelectorAll('.sidebar-nav .nav-item > a').forEach(function (a) {
+        var target = (a.getAttribute('href') || '').replace('./', '').replace(/\.(php|html)$/, '');
+        if (target === page) a.classList.add('active');
+    });
+})();
+</script>
+
+
+
+
+
+
+
+
+        <main class="main-wrapper">
+            <header class="header rsp-hd">
+  <div class="rsp-hd-in">
+
+    <!-- menu button (visible only when the sidebar is hidden) -->
+    <div class="menu-toggle-btn">
+      <button id="menu-toggle" class="rsp-hd-burger" aria-label="Open menu">
+        <i class="lni lni-menu"></i>
+      </button>
+    </div>
+
+    <!-- greeting -->
+    <div class="rsp-hd-greet">
+      <h6><span id="rspGreetTime">Hello</span>, <span id="rspGreetName"></span></h6>
+      <p id="rspGreetDate"></p>
+    </div>
+
+    <!-- tools -->
+    <div class="rsp-hd-tools">
+            
+
+      <span class="rsp-hd-sep"></span>
+    </div>
+
+    <!-- profile -->
+    <div class="profile-box dropdown">
+      <button class="rsp-hd-user" type="button" id="profile" data-bs-toggle="dropdown" aria-expanded="false">
+        <img id="clinicLogo" alt="" class="rsp-hd-ava" />
+        <span class="rsp-hd-user-txt">
+          <strong id="rspGreetName2"></strong>
+          <small>Administrator</small>
+        </span>
+        <i class="fa-solid fa-chevron-down rsp-hd-chev"></i>
+        <span id="welcome2" hidden></span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
+        <li><a href="./admin-profile.html"><i class="fa-solid fa-user"></i> Profile</a></li>
+        <li><a href="#0" id="logoutBtn" onclick="logout()"><i class="lni lni-exit"></i> Sign Out</a></li>
+      </ul>
+    </div>
+
+  </div>
+</header>
+
+<script>
+  const clinicName = localStorage.getItem("login_id");
+// clinic logo now comes from our own dashboard backend (the old
+  // humorstech.com call could hang for 20s, which is why the placeholder
+  // person icon used to sit there before flipping to the initial)
+  const logoImg = document.getElementById("clinicLogo");
+  const firstLetter = clinicName.charAt(0).toUpperCase();
+
+  const colorMap = {
+    A: "#FF6B6B", B: "#6BCB77", C: "#4D96FF", D: "#FFB74D", E: "#9575CD", F: "#26A69A",
+    G: "#FF7043", H: "#42A5F5", I: "#66BB6A", J: "#FFCA28", K: "#AB47BC", L: "#26C6DA",
+    M: "#EC407A", N: "#8D6E63", O: "#5C6BC0", P: "#9CCC65", Q: "#29B6F6", R: "#F06292",
+    S: "#7986CB", T: "#D4E157", U: "#00ACC1", V: "#FF8A65", W: "#BA68C8", X: "#4DB6AC",
+    Y: "#FFD54F", Z: "#90CAF9"
+  };
+
+  function generateInitialImage(letter) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 40;
+    canvas.height = 40;
+    const ctx = canvas.getContext("2d");
+
+    const bgColor = colorMap[letter] || "#607D8B";
+
+    ctx.beginPath();
+    ctx.arc(20, 20, 20, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fillStyle = bgColor;
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 20px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(letter, 20, 22);
+
+    return canvas.toDataURL("image/png");
+  }
+
+  // Show the clinic initial straight away so the avatar never flashes a
+  // generic person icon while a network call is in flight.
+  logoImg.src = generateInitialImage(firstLetter);
+
+  fetch(`${window.NODE_API}/api/clinic/logos`, {
+    method: "POST",
+    headers: window.authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ login_id: clinicName }),
+  })
+    .then(res => (res.ok ? res.json() : Promise.reject(new Error("HTTP " + res.status))))
+    .then(data => {
+      const src = data && data.status === "success" ? (data.data || {}).logo_src : null;
+      if (src) logoImg.src = src;   // real logo found — upgrade from the initial
+    })
+    .catch(error => {
+      // no logo uploaded, or the lookup failed: the initial already stands in
+      console.warn("Clinic logo unavailable:", error.message);
+    });
+
+  // Greeting block: time-of-day + clinic name + today's date in words
+  (function () {
+    const h = new Date().getHours();
+    const g = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+    const gt = document.getElementById("rspGreetTime"); if (gt) gt.textContent = g;
+    const n1 = document.getElementById("rspGreetName"); if (n1) n1.textContent = clinicName || "";
+    const n2 = document.getElementById("rspGreetName2"); if (n2) n2.textContent = clinicName || "";
+    const d = document.getElementById("rspGreetDate");
+    if (d) d.textContent = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  })();
+</script>
+
+
+            <section class="section new-dashboard admin-profile">
+                <div class="container-fluid">
+
+                    <div class="rsp-pagehead">
+                        <h1 class="rsp-pagetitle">Clinic profile</h1>
+                        <p class="rsp-pagesub">Your account details and sign-in settings.</p>
+                    </div>
+
+                    <div class="row rsp-row">
+                        <div class="col-lg-4 col-12">
+                            <div class="card rsp-card rsp-idcard h-100">
+                                <div class="rsp-avatar rsp-avatar--xl" id="adminAvatar">?</div>
+                                <h2 class="rsp-idcard-name" id="adminName">&mdash;</h2>
+                                <p class="rsp-idcard-loc"><i class="fa-solid fa-location-dot"></i> <span id="adminLocation">&mdash;</span></p>
+                                <span class="rsp-role-badge">Administrator</span>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-8 col-12">
+                            <div class="card rsp-card h-100">
+                                <div class="rsp-card-head">
+                                    <h3 class="rsp-card-title"><i class="fa-regular fa-id-card rsp-ti"></i>Account details</h3>
+                                </div>
+
+                                <div class="rsp-inforow">
+                                    <div class="rsp-inforow-ico"><i class="fa-regular fa-envelope"></i></div>
+                                    <div>
+                                        <p class="rsp-inforow-lbl">Registered email</p>
+                                        <p class="rsp-inforow-val" id="adminEmail">&mdash;</p>
+                                    </div>
+                                </div>
+
+                                <div class="rsp-inforow">
+                                    <div class="rsp-inforow-ico"><i class="fa-solid fa-phone"></i></div>
+                                    <div>
+                                        <p class="rsp-inforow-lbl">Registered phone</p>
+                                        <p class="rsp-inforow-val" id="adminPhone">&mdash;</p>
+                                    </div>
+                                </div>
+
+                                <div class="rsp-inforow">
+                                    <div class="rsp-inforow-ico"><i class="fa-regular fa-image"></i></div>
+                                    <div>
+                                        <p class="rsp-inforow-lbl">Report logo <span class="rsp-inforow-hint">&mdash; shown on every report you generate</span></p>
+                                        <img id="reportLogoImg" class="rsp-report-logo" src="" alt="Clinic logo" style="display:none" />
+                                        <p class="rsp-inforow-val rsp-logo-empty" id="logoEmpty" style="display:none">No logo uploaded yet</p>
+                                    </div>
+                                </div>
+
+                                <div class="rsp-profile-actions">
+                                    <button type="button" class="rsp-btn-dark" data-bs-toggle="modal" data-bs-target="#changePassword">
+                                        <i class="fa-solid fa-key"></i> Change password
+                                    </button>
+                                    <button type="button" class="rsp-btn-danger-ghost" onclick="logout()">
+                                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <footer class="footer">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6 order-last order-md-first">
+                <div class="copyright text-center text-md-start">
+                    <p class="text-sm">
+                        Designed and Developed by
+                        <a href="https://humorstech.com" target="_blank" rel="noopener">
+                            Humorstech Pvt Ltd
+                        </a>
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="terms d-flex justify-content-center justify-content-md-end">
+                    <a href="https://respyr.in/terms-conditions/" class="text-sm" target="_blank" rel="noopener">Terms &amp; Conditions</a>
+                    <a href="https://respyr.in/privacy_policy/" class="text-sm ml-15" target="_blank" rel="noopener">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- In-page report dialog: openReportModal(url) loads the report in an
+     iframe overlay instead of navigating away. Esc / backdrop / × close it. -->
+<div class="rsp-repmodal" id="rspRepModal" hidden>
+    <div class="rsp-repmodal-back"></div>
+    <div class="rsp-repmodal-card" role="dialog" aria-modal="true" aria-label="Test report">
+        <div class="rsp-repmodal-head">
+            <span class="rsp-repmodal-title">Test report</span>
+            <div class="rsp-repmodal-actions">
+                <button type="button" id="rspRepDl" class="rsp-repmodal-btn dark" disabled><i class="fa-solid fa-download"></i>Download pdf</button>
+                <button type="button" id="rspRepSend" class="rsp-repmodal-btn blue" disabled><i class="fa-solid fa-envelope"></i>Send pdf</button>
+                <a id="rspRepOpenTab" href="#" target="_blank" rel="noopener" title="Open full page"><i class="fa-solid fa-up-right-from-square"></i></a>
+                <button type="button" id="rspRepClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="rsp-repmodal-body"><iframe id="rspRepFrame" title="Test report"></iframe></div>
+    </div>
+</div>
+<script>
+    (function () {
+        const modal = document.getElementById("rspRepModal");
+        const frame = document.getElementById("rspRepFrame");
+        const tabLink = document.getElementById("rspRepOpenTab");
+
+        // The report is a fixed ~840px A4 document; on narrower dialogs it is
+        // zoomed down so the whole page width is visible without h-scrolling.
+        function fit() {
+            const body = modal.querySelector(".rsp-repmodal-body");
+            const w = body.clientWidth;
+            frame.style.zoom = w < 860 ? (w / 860) : 1;
+        }
+
+        // Download / Send live in the report page — the header buttons just
+        // forward the click into the iframe once it has loaded.
+        const dlBtn = document.getElementById("rspRepDl");
+        const sendBtn = document.getElementById("rspRepSend");
+        function proxyClick(id) {
+            try {
+                const doc = frame.contentDocument;
+                const b = doc && doc.getElementById(id);
+                if (b) b.click();
+            } catch (e) {}
+        }
+        dlBtn.addEventListener("click", () => proxyClick("downloadBtn"));
+        sendBtn.addEventListener("click", () => proxyClick("emailBtn"));
+        frame.addEventListener("load", () => {
+            const ready = frame.src && frame.src.indexOf("about:blank") === -1;
+            dlBtn.disabled = !ready;
+            sendBtn.disabled = !ready;
+        });
+
+        window.openReportModal = function (url) {
+            dlBtn.disabled = true;
+            sendBtn.disabled = true;
+            frame.src = url;
+            tabLink.href = url;
+            modal.hidden = false;
+            document.body.classList.add("rsp-repmodal-open");
+            fit();
+        };
+
+        function close() {
+            // Blanking the iframe kills an in-flight PDF build or email send,
+            // which used to happen silently. Ask first if the report says it is busy.
+            let busy = false;
+            try { busy = !!(frame.contentWindow && frame.contentWindow.rspReportBusy); } catch (e) { /* cross-doc */ }
+            if (busy && !confirm("A report is still being sent. Close anyway and cancel it?")) return;
+
+            modal.hidden = true;
+            document.body.classList.remove("rsp-repmodal-open");
+            frame.src = "about:blank"; // stop any in-flight report work
+        }
+
+        modal.querySelector(".rsp-repmodal-back").addEventListener("click", close);
+        document.getElementById("rspRepClose").addEventListener("click", close);
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) close(); });
+        window.addEventListener("resize", () => { if (!modal.hidden) fit(); });
+    })();
+</script>
+
+        </main>
+
+        <!-- Change password modal -->
+        <div class="modal fade" id="changePassword" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">Change password</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editProfileForm">
+                            <div class="mb-3">
+                                <label for="current_password" class="form-label">Current password</label>
+                                <input type="password" class="form-control" id="current_password" />
+                                <div id="currentPasswordError" class="text-danger mt-1" style="display: none;">Incorrect current password.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">New password</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="password" />
+                                    <span class="input-group-text bg-white">
+                                        <i class="fa-solid fa-eye-slash" id="togglePassword" style="cursor: pointer;"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirm new password</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="confirm_password" />
+                                    <span class="input-group-text bg-white">
+                                        <i class="fa-solid fa-eye-slash" id="toggleConfirmPassword" style="cursor: pointer;"></i>
+                                    </span>
+                                </div>
+                                <div id="confirmPasswordError" class="text-danger mt-1" style="display: none;">Passwords do not match.</div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="rsp-btn-dark" id="saveChangesBtn" disabled onclick="saveProfileChanges()">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scripts -->
+        <script src="assets/js/bootstrap.bundle.min.js"></script>
+        <script src="assets/js/main.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
+
+        <script>
+            function logout() {
+                localStorage.removeItem("jwt_token");
+                localStorage.removeItem("login_id");
+                window.location.href = "./clinical-v2/";
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                const clinicName = localStorage.getItem("login_id") || "";
+                const w = document.getElementById("welcome2");
+                if (w) w.textContent = `Welcome, ${clinicName}!`;
+
+                // Initial-letter avatar — same palette as the test-log avatars.
+                const AV_COLORS = ["#308bf9", "#3faf58", "#e48326", "#8e44ad", "#0ea5a4", "#e74c3c", "#6366f1", "#d97706"];
+                const initial = (clinicName.charAt(0) || "?").toUpperCase();
+                const av = AV_COLORS[(initial.charCodeAt(0) || 65) % AV_COLORS.length];
+                const avatar = document.getElementById("adminAvatar");
+                avatar.textContent = initial;
+                avatar.style.background = av + "1a";
+                avatar.style.color = av;
+
+                // Clinic details from the Node backend.
+                fetch(`${window.NODE_API}/api/dashboard/clinic-info`, {
+                    method: "POST",
+                    headers: window.authHeaders({ "Content-Type": "application/json" }),
+                    body: JSON.stringify({ clinic_name: clinicName }),
+                })
+                    .then((r) => r.json())
+                    .then((clinic) => {
+                        document.getElementById("adminName").textContent = clinic.clinic_name || clinicName || "Admin";
+                        document.getElementById("adminLocation").textContent = clinic.location || "NA";
+                        document.getElementById("adminEmail").textContent = clinic.username || "-";
+                        document.getElementById("adminPhone").textContent = clinic.phone_no || "-";
+                    })
+                    .catch(() => {
+                        document.getElementById("adminName").textContent = clinicName || "Admin";
+                    });
+
+                // Report logo (URL from the Node backend; hide cleanly if none).
+                const logoImg = document.getElementById("reportLogoImg");
+                const logoEmpty = document.getElementById("logoEmpty");
+                fetch(`${window.NODE_API}/api/clinic/logos`, {
+                    method: "POST",
+                    headers: window.authHeaders({ "Content-Type": "application/json" }),
+                    body: JSON.stringify({ login_id: clinicName }),
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        const src = data?.data?.report_logo_src || data?.data?.logo_src || "";
+                        if (src) {
+                            logoImg.src = src;
+                            logoImg.style.display = "block";
+                            logoImg.onerror = () => { logoImg.style.display = "none"; logoEmpty.style.display = "block"; };
+                        } else {
+                            logoEmpty.style.display = "block";
+                        }
+                    })
+                    .catch(() => { logoEmpty.style.display = "block"; });
+            });
+
+            // Toggle password visibility
+            function toggleVisibility(toggleId, inputId) {
+                const toggle = document.getElementById(toggleId);
+                const input = document.getElementById(inputId);
+                toggle.addEventListener("click", function () {
+                    const isPassword = input.getAttribute("type") === "password";
+                    input.setAttribute("type", isPassword ? "text" : "password");
+                    this.classList.toggle("fa-eye");
+                    this.classList.toggle("fa-eye-slash");
+                });
+            }
+
+            toggleVisibility("togglePassword", "password");
+            toggleVisibility("toggleConfirmPassword", "confirm_password");
+
+            const currentPasswordInput = document.getElementById("current_password");
+            const passwordInput = document.getElementById("password");
+            const confirmInput = document.getElementById("confirm_password");
+            const saveBtn = document.getElementById("saveChangesBtn");
+            const currentPasswordError = document.getElementById("currentPasswordError");
+            const confirmPasswordError = document.getElementById("confirmPasswordError");
+
+            function validateAll() {
+                const current = currentPasswordInput.value.trim();
+                const pw = passwordInput.value.trim();
+                const cpw = confirmInput.value.trim();
+
+                if (pw && cpw && pw !== cpw) {
+                    confirmInput.classList.add("is-invalid");
+                    confirmPasswordError.style.display = "block";
+                } else {
+                    confirmInput.classList.remove("is-invalid");
+                    confirmPasswordError.style.display = "none";
+                }
+
+                saveBtn.disabled = !(current && pw && cpw && pw === cpw);
+            }
+
+            currentPasswordInput.addEventListener("input", validateAll);
+            passwordInput.addEventListener("input", validateAll);
+            confirmInput.addEventListener("input", validateAll);
+
+            function saveProfileChanges() {
+                const current_password = currentPasswordInput.value.trim();
+                const new_password = passwordInput.value.trim();
+                const confirm_password = confirmInput.value.trim();
+                const clinic_name = localStorage.getItem("login_id");
+
+                if (!current_password || !new_password || new_password !== confirm_password) {
+                    validateAll();
+                    return;
+                }
+
+                fetch(`${window.NODE_API}/api/clinic/change-password`, {
+                    method: "POST",
+                    headers: window.authHeaders({ "Content-Type": "application/json" }),
+                    body: JSON.stringify({ clinic_name, current_password, new_password }),
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data && data.status === "success") {
+                            $.toast({
+                                heading: "Success",
+                                text: data.message || "Password updated successfully!",
+                                showHideTransition: "slide",
+                                icon: "success",
+                                position: "bottom-right",
+                            });
+
+                            document.getElementById("editProfileForm").reset();
+                            saveBtn.disabled = true;
+                            currentPasswordInput.classList.remove("is-invalid");
+                            currentPasswordError.style.display = "none";
+                            confirmInput.classList.remove("is-invalid");
+                            confirmPasswordError.style.display = "none";
+
+                            const modalEl = document.getElementById("changePassword");
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            modal.hide();
+                        } else if (data && data.status === "error" && data.message === "Incorrect current password") {
+                            currentPasswordInput.classList.add("is-invalid");
+                            currentPasswordError.style.display = "block";
+
+                            $.toast({
+                                heading: "Error",
+                                text: "Incorrect current password.",
+                                showHideTransition: "fade",
+                                icon: "error",
+                                position: "bottom-right",
+                            });
+                        } else {
+                            $.toast({
+                                heading: "Error",
+                                text: (data && data.message) || "Password change failed.",
+                                showHideTransition: "fade",
+                                icon: "error",
+                                position: "bottom-right",
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        $.toast({
+                            heading: "Error",
+                            text: "Network or server error. Please try again.",
+                            showHideTransition: "fade",
+                            icon: "error",
+                            position: "bottom-right",
+                        });
+                    });
+            }
+        </script>
+    </body>
+</html>

@@ -330,7 +330,7 @@
                 if (data.token) {
                     localStorage.setItem("jwt_token", data.token);
                     localStorage.setItem("login_id", username);
-                    window.location.href = "../../dashboard";
+                    window.location.href = "../../dashboard.html";
                     return;
                 }
                 showErr(msg, data.error || "Login failed. Please try again.");

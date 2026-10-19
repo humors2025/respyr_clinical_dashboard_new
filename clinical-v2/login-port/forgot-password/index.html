@@ -142,9 +142,13 @@
                         Send OTP <i class="fa-regular fa-paper-plane"></i>
                     </button>
 
-<?php if (!isset($_GET['appshow']) || $_GET['appshow'] !== 'true') : ?>
-                    <a class="backlink" href="../"><i class="fa-solid fa-arrow-left-long"></i>&nbsp; Back to login</a>
-<?php endif; ?>
+                    <a class="backlink" id="rspBackToLogin" href="../"><i class="fa-solid fa-arrow-left-long"></i>&nbsp; Back to login</a>
+                    <script>
+                        // the app opens this page in a WebView with ?appshow=true and no login page to go back to
+                        if (new URLSearchParams(location.search).get("appshow") === "true") {
+                            var b = document.getElementById("rspBackToLogin"); if (b) b.remove();
+                        }
+                    </script>
                 </form>
 
                 <!-- Step 2: verify OTP -->

@@ -1,0 +1,10 @@
+version: 1
+frontend:
+  phases:
+    build:
+      commands: []
+  artifacts:
+    # Pure static site - nothing to build, deploy the repo as-is.
+    baseDirectory: .
+    files:
+      - "**/*"
