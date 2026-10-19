@@ -174,7 +174,7 @@ only screen and (max-width: 760px),
 
     </style>
     <body>
-        <script>if (!localStorage.getItem("jwt_token")) location.href = "../clinical-v2/";</script>
+        <script>if (!localStorage.getItem("jwt_token")) location.href = "./clinical-v2/";</script>
         <?php include "./pages/sidebar.php" ?>
         <main class="main-wrapper">
             <?php $showHeaderSearch = true; $headerSearchPlaceholder = "Search subjects..."; include "pages/header_no_date.php" ?>
@@ -368,7 +368,7 @@ only screen and (max-width: 760px),
 
  function logout() {
     localStorage.removeItem("jwt_token");
-    window.location.href = "../clinical-v2/";
+    window.location.href = "./clinical-v2/";
   }
 
 

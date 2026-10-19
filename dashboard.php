@@ -811,7 +811,7 @@ let selectedFormattedDate = ''; // Global variable to hold formatted date
     localStorage.removeItem("jwt_token");
     localStorage.removeItem("login_id");
     sessionStorage.clear();
-    window.location.href = "../clinical-v2/";
+    window.location.href = "./clinical-v2/";
 
 
   }
@@ -864,7 +864,7 @@ let selectedFormattedDate = ''; // Global variable to hold formatted date
                // No valid session — back to the login portal.
                console.warn("Token issue:", err.message);
                localStorage.removeItem("jwt_token");
-               window.location.href = "../clinical-v2/";
+               window.location.href = "./clinical-v2/";
           }
      }
 

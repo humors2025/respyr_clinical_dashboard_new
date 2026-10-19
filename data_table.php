@@ -68,7 +68,7 @@ color:#308BF9;
     } catch (err) {
       console.warn("Invalid or expired token:", err.message);
       localStorage.removeItem("jwt_token");
-      window.location.href = "../clinical-v2/";
+      window.location.href = "./clinical-v2/";
     }
   }
 
@@ -303,7 +303,7 @@ color:#308BF9;
 
   function logout() {
     localStorage.removeItem("jwt_token");
-    window.location.href = "../clinical-v2/";
+    window.location.href = "./clinical-v2/";
   }
 
   window.addEventListener("pageshow", checkTokenAndRender);

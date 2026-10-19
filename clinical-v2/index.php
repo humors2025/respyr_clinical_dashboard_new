@@ -33,7 +33,7 @@ header("Location:./login-port/");
 
       if (data.token) {
         localStorage.setItem("jwt_token", data.token);
-        window.location.href = "../clinical-dashboard_v2/usage_analytics.php";
+        window.location.href = "../usage_analytics.php";
       } else {
         document.getElementById("msg").innerText = data.error || "Login failed.";
       }

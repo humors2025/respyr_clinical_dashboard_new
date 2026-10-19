@@ -51,7 +51,7 @@ $profile_name   = $_GET['name']       ?? '';
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <body>
-        <script>if (!localStorage.getItem("jwt_token")) location.href = "../clinical-v2/";</script>
+        <script>if (!localStorage.getItem("jwt_token")) location.href = "./clinical-v2/";</script>
         <script>
             // Go back that can't get stuck: history.back() only when the
             // previous entry is another page of this app; otherwise (and if

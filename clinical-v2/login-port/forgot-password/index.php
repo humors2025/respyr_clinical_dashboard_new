@@ -115,13 +115,13 @@
             <div class="hero-inner">
                 <h2>India's first breath-based<br />health screening device</h2>
                 <p>Four health scores from a single breath.</p>
-                <img class="hero-img" src="../../../clinical-dashboard_v2/report/report_images/1.jpg" alt="Respyr breath screening device in use" />
+                <img class="hero-img" src="../../../report/report_images/1.jpg" alt="Respyr breath screening device in use" />
             </div>
         </aside>
 
         <section class="panel">
             <div class="panel-inner">
-                <img class="logo" src="../../../clinical-dashboard_v2/assets/images/logo/logo.svg" alt="Respyr" />
+                <img class="logo" src="../../../assets/images/logo/logo.svg" alt="Respyr" />
 
                 <!-- Step 1: request OTP -->
                 <form id="loginForm" autocomplete="on">

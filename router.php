@@ -1,7 +1,7 @@
 <?php
 // Dev router for PHP's built-in server (`php -S host:port router.php`).
 //
-// This PHP app uses extensionless, Apache-rewritten URLs (e.g. /clinical-dashboard_v2/history
+// This PHP app uses extensionless, Apache-rewritten URLs (e.g. /history
 // -> history.php). The built-in server has no rewrite engine, so without this the nav
 // links 404. This maps extensionless paths to their .php file, serves real files
 // (assets, existing .php) directly, and falls back to a folder's index.php.

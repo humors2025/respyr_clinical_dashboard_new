@@ -13,7 +13,7 @@
         <?php include "head.php"; ?>
     </head>
     <body>
-        <script>if (!localStorage.getItem("jwt_token")) location.href = "../clinical-v2/";</script>
+        <script>if (!localStorage.getItem("jwt_token")) location.href = "./clinical-v2/";</script>
         <?php include "./pages/sidebar.php" ?>
         <main class="main-wrapper">
             <?php include "pages/header_no_date.php" ?>
@@ -141,7 +141,7 @@
             function logout() {
                 localStorage.removeItem("jwt_token");
                 localStorage.removeItem("login_id");
-                window.location.href = "../clinical-v2/";
+                window.location.href = "./clinical-v2/";
             }
 
             document.addEventListener("DOMContentLoaded", function () {

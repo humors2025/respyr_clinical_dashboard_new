@@ -3,7 +3,7 @@
 // redirect to the LOGIN portal. It must NOT point back at a dashboard page, or
 // every page ping-pongs in an infinite redirect loop. (Folder is "clinical-v2"
 // with a hyphen; the original had a "clinical_v2" typo that 404'd.)
-header("Location: ../clinical-v2/");
+header("Location: ./clinical-v2/");
 ?>
 
 <!DOCTYPE html>
