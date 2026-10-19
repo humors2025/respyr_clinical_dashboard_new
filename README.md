@@ -6,9 +6,11 @@ breath-derived scores (sugar, liver, gut, respiratory), and download or email
 the PDF health report.
 
 **100% static HTML + JavaScript — no server-side code.** It deploys on AWS
-Amplify, or any static file host. All data comes from the Node dashboard
-backend (`respyr-dashboard-backend`, deployed to AWS Lambda), which is shared
-separately and will be added to this repo once it is live.
+Amplify, or any static file host. All data comes from the Node backend
+in [`dashboard-backend/`](dashboard-backend/) — an Express service deployed to
+AWS Lambda (see its `DEPLOY-LAMBDA.md` and `SETUP-REQUIREMENTS.md`). The
+frontend picks the backend at runtime: localhost pages use a local backend on
+port 3001, deployed pages use the Lambda Function URL.
 
 > This used to be a PHP-served app. In Oct 2026 every page was converted to
 > static HTML, and the report's PHP interpretation engine was ported to
