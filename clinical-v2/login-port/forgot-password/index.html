@@ -297,7 +297,7 @@ document.getElementById("otp-form").addEventListener("submit", async function (e
 
         if (data.success && data.reset_token) {
             resetOtpInputBorders();
-            window.location.href = "../change-password/index.php?token=" + encodeURIComponent(data.reset_token);
+            window.location.href = "../change-password/index.html?token=" + encodeURIComponent(data.reset_token);
         } else {
             showErr(msgE2, data.message || "Entered invalid OTP.");
             highlightOtpInputsRed();
