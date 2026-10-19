@@ -24,6 +24,11 @@
         // RspMethods (differentially tested against the PHP original), and
         // fills every [data-rf]/[data-rfh] placeholder on DOMContentLoaded.
         // ------------------------------------------------------------------
+        // Backend: local Node when served from localhost, Lambda otherwise
+        // (the Lambda's CORS only admits the production origin).
+        window.NODE_API = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+        ? "http://localhost:3001"   // local dev: node local.js in the backend repo
+        : "https://u5fnjbxhhzx3xb4be224i7z3e40tbbua.lambda-url.ap-south-1.on.aws";
         (function () {
             var M = window.RspMethods;
             var qs = new URLSearchParams(location.search);

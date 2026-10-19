@@ -10,7 +10,12 @@
     <!-- ===== LOCAL DEV CONFIG (single place to swap for Lambda) ===== -->
     <script>
       // Base URL of the Node backend the dashboard talks to.
-      window.NODE_API = "https://u5fnjbxhhzx3xb4be224i7z3e40tbbua.lambda-url.ap-south-1.on.aws";            // local testing
+      // Backend: the local Node service when this page is itself served
+      // from localhost, the Lambda otherwise. The Lambda only answers the
+      // production origin (CORS), so hardcoding it breaks local work.
+      window.NODE_API = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+        ? "http://localhost:3001"   // local dev: node local.js in the backend repo
+        : "https://u5fnjbxhhzx3xb4be224i7z3e40tbbua.lambda-url.ap-south-1.on.aws";
       // window.NODE_API = "<DASHBOARD-LAMBDA-URL>"; // prod — the DASHBOARD backend's own Function URL (NOT the app's)
 
       // Attach the signed-in user's token to API calls. Dashboard endpoints
