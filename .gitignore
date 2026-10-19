@@ -1,0 +1,9 @@
+# Never commit: retired files with hardcoded credentials stay local.
+_unused/
+
+# OS/editor leftovers
+.DS_Store
+Thumbs.db
+*.swp
+*.save
+*.bak

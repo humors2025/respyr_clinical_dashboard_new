@@ -1,0 +1,148 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+*,
+html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+main {
+  max-height: 100vh;
+  min-height: 100vh;
+  height: 100vh;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  border-radius: 5px;
+  background: #fff;
+/*  box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 0.05); */
+  padding: 50px 30px;
+}
+.login-card #loginForm {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+}
+.login-card #loginForm .wrap-input100 {
+  width: 100%;
+  position: relative;
+}
+.login-card #loginForm .wrap-input100 label {
+  color: #535353;
+  font-family: Poppins;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 110%; /* 16.5px */
+  letter-spacing: -0.3px;
+}
+.login-card #loginForm .wrap-input100 .input100 {
+  width: 100%;
+  padding: 10px 20px;
+  color: #252525;
+  font-family: Poppins;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 110%; /* 16.5px */
+  letter-spacing: -0.3px;
+  border-radius: 0px;
+  border: 1px solid #c7c6ce;
+  background: #f0f0f0;
+}
+.login-card #loginForm .wrap-input100 .input100:focus {
+  outline: none;
+}
+.login-card #loginForm .wrap-input100 .input100::-moz-placeholder {
+  color: #a1a1a1;
+  font-family: Poppins;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 110%; /* 16.5px */
+  letter-spacing: -0.3px;
+}
+.login-card #loginForm .wrap-input100 .input100::placeholder {
+  color: #a1a1a1;
+  font-family: Poppins;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 110%; /* 16.5px */
+  letter-spacing: -0.3px;
+}
+.login-card #loginForm .wrap-input100 .input-pass {
+  position: relative;
+}
+.login-card #loginForm .wrap-input100 .btn-full {
+  width: 100%;
+}
+.login-card #loginForm .wrap-input100 .btn-show-pass {
+  position: absolute;
+  bottom: 50%;
+  right: 20px;
+  transform: translateY(50%);
+}
+.login-card #loginForm .wrap-input100 .btn-show-pass i {
+  cursor: pointer;
+}
+.login-card .mt-30 {
+  margin-top: 30px;
+}
+
+@media only screen and (max-width: 767px) {
+  main {
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+    padding: 20px;
+  }
+}
+.btn-primary {
+  width: 100%;
+  border-radius: 0px;
+  background: #308bf9;
+  color: #fff;
+  font-family: Poppins;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -0.8px;
+}
+
+.otp-inputs {
+  margin-top: 25px;
+  display: grid;
+  grid-template-columns: 60px 60px 50px 50px;
+  justify-content: space-between;
+}
+.otp-inputs .input {
+  height: 40px;
+  text-align: center;
+  color: #252525;
+  font-family: Poppins;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 110%; /* 16.5px */
+  letter-spacing: -0.3px;
+  border-radius: 5px;
+  border: 1px solid #c7c6ce;
+  background: #f0f0f0;
+}
+.otp-inputs .input:focus {
+  border: 2px solid #308bf9;
+  outline: none;
+}
+.otp-inputs .input:nth-child(1) {
+  cursor: pointer;
+  pointer-events: all;
+}/*# sourceMappingURL=style.css.map */
