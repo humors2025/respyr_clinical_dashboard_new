@@ -41,11 +41,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# ─── PHP dashboard (the currently live product) ───
-# Now safe to publish: every credential was moved out of these folders in
-# Oct 2026 (backend logic ported to dashboard-backend/, retired files with
-# hardcoded secrets stay local in _unused/, which is never committed).
+# ─── Live PHP dashboard + Node backend (kept out of this repo for now) ───
+# This repo is the Next.js dashboard only. The PHP frontend stays on its PHP
+# host and the Node backend is shared separately until this app runs against
+# it - then the backend folder gets added deliberately.
+/clinical-v2/
+/clinical-dashboard_v2/
+/dashboard-backend/
 /_unused/
+/router.php
 
 # macOS
 **/.DS_Store

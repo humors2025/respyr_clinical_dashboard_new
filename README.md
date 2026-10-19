@@ -13,9 +13,9 @@ Deployed via **AWS Amplify** — pushing to `main` publishes.
     Raising it means `src/middleware.ts` becomes `src/proxy.ts` and the ESLint
     flat-config bridge in `eslint.config.mjs` can be dropped.
 - Tailwind CSS v4, themed with the Respyr design tokens
-- Data backend: currently the legacy PHP APIs on `humorstech.com` (see
-  **Repository layout** - those APIs are being retired and this app must be
-  repointed at `dashboard-backend/` once it is on Lambda)
+- Data backend: currently the legacy PHP APIs on `humorstech.com`. Those APIs
+  are being retired in favour of the new Node dashboard backend (AWS Lambda);
+  see **Backend migration** below.
 
 ## Scores
 
@@ -29,29 +29,25 @@ Deployed via **AWS Amplify** — pushing to `main` publishes.
 Bands: **Good** ≥ 80, **Fair** 70–79, **Poor** < 70. Thresholds mirror the legacy
 `report/methods.php` and must not drift — clinicians read the report wording against them.
 
-## Repository layout — three components, one product
+## Backend migration
 
-| Folder | What it is | Runs on |
-| --- | --- | --- |
-| `src/` (this app) | Next.js rewrite of the dashboard, in progress | AWS Amplify (push to `main` deploys) |
-| `dashboard-backend/` | Node/Express API — the replacement for the `humorstech.com` PHP APIs | AWS Lambda (see its `DEPLOY-LAMBDA.md`) |
-| `clinical-dashboard_v2/` + `clinical-v2/` | The **live** PHP-served dashboard clinics use today | Any PHP host (`php -S localhost:8080 router.php` locally) |
+This repo holds only the Next.js dashboard. The rest of the product lives
+elsewhere for now: the live PHP-served dashboard stays on its PHP host, and
+the new Node backend (`respyr-dashboard-backend`, deployed to AWS Lambda) is
+shared separately; it will be added to this repo once this app runs against it.
 
-Migration state (Oct 2026): the live PHP frontend already talks only to
-`dashboard-backend/` (via `window.NODE_API`); no PHP file contains backend
-logic any more. **This Next.js app is the exception** - it still calls the old
-`humorstech.com` PHP APIs in two places, so it breaks when the old server is
-retired unless these are repointed:
+Two places still point at the old `humorstech.com` PHP APIs and must be
+repointed at the Node backend before the old server is retired:
 
 1. `src/lib/respyr-api.ts` - every data call (login, scores, subjects,
-   trends, logo). Each endpoint has a same-shape equivalent in
-   `dashboard-backend/` (`opd-login_v2.php` → `POST /api/dashboard/login`,
+   trends, logo). Each endpoint has a same-shape equivalent on the Node
+   backend (`opd-login_v2.php` → `POST /api/dashboard/login`,
    `opd-encry-data-weeks_v2.php` → `POST /api/dashboard/data-weeks`, and so
-   on), but the Node routes require its `Authorization: Bearer` dashboard JWT,
-   so the session layer must store that token at sign-in.
+   on), but the Node routes require its `Authorization: Bearer` dashboard
+   JWT, so the session layer must store that token at sign-in.
 2. `src/app/api/report/email/route.ts` - `RESPYR_MAILER_URL` defaults to the
-   retired `send_email1.php`. The replacement is
-   `POST /api/dashboard/send-report-email` on `dashboard-backend` (same
+   retired PHP mailer `send_email1.php`. The replacement is
+   `POST /api/dashboard/send-report-email` on the Node backend (same
    multipart fields; also needs the Bearer token).
 
 ## Architecture
