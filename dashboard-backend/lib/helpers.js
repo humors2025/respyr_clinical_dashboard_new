@@ -28,12 +28,4 @@ function formatDateSQL(d) {
     return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`;
 }
 
-// Absolute URL the app should call to fetch a ticket's image bytes. Defaults to
-// the legacy PHP endpoint so nothing breaks mid-migration; once this backend is
-// the source of truth, set PUBLIC_BASE_URL to its own URL and these links point
-// at the new GET /api/support/image route instead of back at the old server.
-const IMAGE_BASE_URL = process.env.PUBLIC_BASE_URL
-    ? `${process.env.PUBLIC_BASE_URL.replace(/\/+$/, '')}/api/support/image`
-    : 'https://humorstech.com/humors_app/app_final/clinical/api/fetch/get_issue_image.php';
-
-module.exports = { formatDateIST, formatDateSQL, IMAGE_BASE_URL };
+module.exports = { formatDateIST, formatDateSQL };

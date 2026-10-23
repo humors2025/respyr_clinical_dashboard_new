@@ -17,7 +17,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const throttle = require('../lib/throttle');
 const multer = require('multer');
-const { sendReportEmail, isConfigured: mailConfigured } = require('../lib/mailer');
+const crypto = require('crypto');
+const { sendReportEmail, sendOtpEmail, isConfigured: mailConfigured } = require('../lib/mailer');
 
 // One definition of the signing secret for this whole service (auth.js also
 // refuses to boot on Lambda without it configured).
@@ -408,29 +409,37 @@ function maskEmail(e) {
     return (u.length <= 2 ? u[0] + '*' : u.slice(0, 2) + '***') + '@' + d;
 }
 
-// Step 1: generate + email the OTP. Email delivery still goes through the
-// legacy PHP mailer (we have no SMTP here), but the OTP it returns stays on
-// THIS server — the browser only learns a masked email address.
+// Step 1: generate + email the OTP. The code is minted HERE and mailed through
+// our own SMTP (lib/mailer.js) — this used to go through the legacy PHP mailer
+// on humorstech.com, the last call this service made to the old server. The
+// browser only ever learns a masked email address.
 router.post('/forgot-password/send', async (req, res) => {
     try {
         const username = (req.body?.username || '').trim();
         if (!username) return res.status(400).json({ success: false, message: 'Username required' });
 
+        // table_clinics has no dedicated email column: `username` holds the
+        // clinic's email where one is on file (older rows carry a legacy
+        // numeric id there, and those accounts cannot reset by email).
         const [clinics] = await pool.query(
-            `SELECT clinic_name FROM table_clinics WHERE clinic_name = ? LIMIT 1`, [username]
+            `SELECT clinic_name, username FROM table_clinics WHERE clinic_name = ? LIMIT 1`, [username]
         );
-        // same answer whether or not the clinic exists (no enumeration)
-        if (!clinics.length) return res.json({ success: false, message: 'Could not send OTP. Try again.' });
-
-        const resp = await fetch(
-            `https://humorstech.com/humors_app/app_final/clinical/forgot-password/send_otp2.php?username=${encodeURIComponent(username)}`
-        );
-        const data = await resp.json();
-        if (!data.success || !data.otp) {
-            return res.json({ success: false, message: data.message || 'Could not send OTP' });
+        // same answer for a missing clinic and one with no email on file
+        // (no enumeration)
+        const email = String(clinics[0]?.username || '').trim();
+        if (!clinics.length || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.json({ success: false, message: 'Could not send OTP. Try again.' });
         }
 
-        const otpHash = bcrypt.hashSync(String(data.otp), 10);
+        if (!mailConfigured()) {
+            console.error('forgot-password/send: RESPYR_SMTP_PASS is not set');
+            return res.status(503).json({ success: false, message: 'Email is not configured on the server.' });
+        }
+
+        const otp = String(crypto.randomInt(100000, 1000000));
+        await sendOtpEmail({ to: email, clinicName: clinics[0].clinic_name, otp });
+
+        const otpHash = bcrypt.hashSync(otp, 10);
         await pool.query(`DELETE FROM dashboard_password_resets WHERE clinic_name = ?`, [username]);
         await pool.query(
             `INSERT INTO dashboard_password_resets (clinic_name, otp_hash, expires_at)
@@ -438,7 +447,7 @@ router.post('/forgot-password/send', async (req, res) => {
             [username, otpHash]
         );
 
-        res.json({ success: true, email: maskEmail(data.email) });
+        res.json({ success: true, email: maskEmail(email) });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Could not send OTP. Try again.' });

@@ -124,4 +124,63 @@ async function sendReportEmail({ to, name, brandName, pdf }) {
     });
 }
 
-module.exports = { sendReportEmail, isConfigured, SMTP_HOST, SMTP_PORT, SMTP_USER };
+function otpBodyHtml(clinicName, otp) {
+    const safeName = String(clinicName || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Respyr Password Reset</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    </head>
+    <body style="margin:0; padding:0; background:#f2f4f6; font-family:'Poppins', sans-serif;">
+      <div style="max-width:600px; margin:0 auto; background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 0 15px rgba(0,0,0,0.1); font-family:'Poppins', sans-serif;">
+        <div style="padding:30px 20px; text-align:center;">
+          <img src="https://respyr.in/assetsnew/img/logo/logo.svg" alt="Respyr Logo" style="max-width:160px;" />
+          <h1 style="color:#1a73e8; font-size:24px; margin-top:20px; margin-bottom:0;">Password Reset Code</h1>
+        </div>
+        <div style="padding:30px 25px; color:#333333;">
+          <p style="font-size:16px; margin-bottom:20px;">Hi <span style="font-weight:600; color:#1a73e8;"> ${safeName} </span>,</p>
+          <p style="font-size:16px; line-height:1.6; margin-bottom:20px;">
+            A password reset was requested for your Respyr dashboard account. Enter this code to continue:
+          </p>
+          <div style="background:#f1f6ff; border-left:4px solid #1a73e8; padding:18px 20px; border-radius:6px; margin-bottom:25px; text-align:center;">
+            <p style="margin:0; font-size:32px; font-weight:600; letter-spacing:8px; color:#1a73e8;">${otp}</p>
+          </div>
+          <p style="font-size:15px; line-height:1.6; margin-bottom:25px; color:#666666;">
+            The code is valid for <strong>5 minutes</strong>. If you did not request a reset, you can
+            safely ignore this email &mdash; your password has not changed.
+          </p>
+          <p style="font-size:16px; margin-bottom:0;">Stay healthy,</p>
+          <p style="font-size:16px; font-weight:600; margin-top:5px;">&mdash; Team Respyr</p>
+        </div>
+        <div style="padding:25px 20px; background:#f9f9f9; text-align:center; font-size:13px; color:#888888;">
+          <p style="margin:5px 0;">&copy; 2025 Respyr. All rights reserved.</p>
+          <p style="margin:5px 0;">
+            <a href="https://respyr.in" style="color:#1a73e8; text-decoration:none;">www.respyr.in</a> |
+            <a href="https://respyr.in/terms-conditions/" style="color:#1a73e8; text-decoration:none;">Terms</a> |
+            <a href="https://respyr.in/privacy_policy/" style="color:#1a73e8; text-decoration:none;">Privacy</a>
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+}
+
+// Sends the forgot-password OTP for the dashboard. The code itself is minted by
+// the caller (routes/dashboard.js), which also stores its bcrypt hash — this
+// function only delivers it.
+async function sendOtpEmail({ to, clinicName, otp }) {
+    await getTransport().sendMail({
+        from: { name: 'Respyr Dashboard', address: SMTP_USER },
+        to,
+        subject: 'Your Respyr password reset code',
+        html: otpBodyHtml(clinicName, otp),
+    });
+}
+
+module.exports = { sendReportEmail, sendOtpEmail, isConfigured, SMTP_HOST, SMTP_PORT, SMTP_USER };

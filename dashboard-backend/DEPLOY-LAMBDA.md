@@ -174,10 +174,11 @@ function's execution role, or it will fail to create network interfaces.
 
 > A Lambda inside a VPC has **no internet access** unless the subnets route
 > through a NAT gateway. That now matters: alongside MySQL this service also
-> sends the report email over SMTP, which is an internet call. Without a NAT
-> gateway every other endpoint works and only "Send pdf" fails, timing out
-> after 15 seconds. See the note under "where does MySQL live?" above for the
-> two ways round it.
+> sends the report email AND the forgot-password OTP email over SMTP, which
+> are internet calls. Without a NAT gateway every other endpoint works but
+> "Send pdf" and the password-reset mail both fail, timing out after
+> 15 seconds. See the note under "where does MySQL live?" above for the two
+> ways round it.
 
 ---
 
