@@ -464,23 +464,36 @@
             }
         });
 
-        // OTP auto-tabbing
+        // OTP auto-tabbing. Focusing a box selects its digit so typing simply
+        // replaces it — with maxlength=1 a filled box would otherwise swallow
+        // every keystroke (the old handlers moved focus back onto filled boxes
+        // and got stuck). Backspace in an EMPTY box walks to the one before it;
+        // in a filled box it just clears the digit and stays. Pasting the whole
+        // code spreads it across the boxes.
         const fpInputs = document.getElementById("fpInputs");
+        const fpBoxes = Array.from(fpInputs.querySelectorAll(".input"));
+        fpBoxes.forEach((b) => b.addEventListener("focus", () => b.select()));
         fpInputs.addEventListener("input", function (e) {
             const target = e.target;
-            if (isNaN(target.value)) { target.value = ""; return; }
+            target.value = target.value.replace(/\D/g, "").slice(0, 1);
             if (target.value !== "") {
                 const next = target.nextElementSibling;
                 if (next) next.focus();
             }
         });
-        fpInputs.addEventListener("keyup", function (e) {
-            const key = e.key.toLowerCase();
-            if (key === "backspace" || key === "delete") {
-                e.target.value = "";
+        fpInputs.addEventListener("keydown", function (e) {
+            if (e.key === "Backspace" && e.target.value === "") {
                 const prev = e.target.previousElementSibling;
-                if (prev) prev.focus();
+                if (prev) { prev.value = ""; prev.focus(); e.preventDefault(); }
             }
+        });
+        fpInputs.addEventListener("paste", function (e) {
+            const digits = (e.clipboardData?.getData("text") || "").replace(/\D/g, "");
+            if (!digits) return;
+            e.preventDefault();
+            let i = Math.max(fpBoxes.indexOf(e.target), 0);
+            for (const d of digits) { if (i >= fpBoxes.length) break; fpBoxes[i].value = d; i++; }
+            fpBoxes[Math.min(i, fpBoxes.length - 1)].focus();
         });
 
         // ---------- set new password ----------
