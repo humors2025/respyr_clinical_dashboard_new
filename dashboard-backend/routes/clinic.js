@@ -63,11 +63,16 @@ router.post('/logos', checkDashboardToken, enforceOwnClinic, async (req, res) =>
 router.post('/change-password', checkDashboardToken, enforceOwnClinic, async (req, res) => {
     try {
         const clinic_name = req.body?.clinic_name || '';
-        const current_password = req.body?.current_password || '';
-        const new_password = req.body?.new_password || '';
+        // Trimmed to match /api/dashboard/login, which trims what is typed there.
+        const current_password = String(req.body?.current_password || '').trim();
+        const new_password = String(req.body?.new_password || '').trim();
 
         if (!clinic_name || !current_password || !new_password) {
             return res.json({ status: 'error', message: 'Missing parameters' });
+        }
+        // same minimum as the forgot-password reset
+        if (new_password.length < 6) {
+            return res.json({ status: 'error', message: 'Password must be at least 6 characters.' });
         }
 
         // Look up the clinic's stored hash

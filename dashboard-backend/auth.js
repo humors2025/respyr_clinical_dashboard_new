@@ -6,17 +6,20 @@
 // an app token must not open a dashboard route.
 // ---------------------------------------------------------------------------
 const jwt = require('jsonwebtoken');
-
-// The fallback is for LOCAL DEVELOPMENT ONLY and is intentionally not a
-// random-looking value: the service refuses to boot on Lambda without the
-// real secret in the environment (checked just below).
-const DASHBOARD_JWT_SECRET = process.env.DASHBOARD_JWT_SECRET
-    || 'dev-only-secret-do-not-deploy';
+const crypto = require('crypto');
 
 // Refuse to boot in a real deployment without the secret configured.
 if (process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.DASHBOARD_JWT_SECRET) {
     throw new Error('DASHBOARD_JWT_SECRET must be set in the Lambda environment');
 }
+
+// No baked-in fallback: a secret written in the source ships in every deploy
+// zip, and anyone holding the zip could mint a login token for any clinic.
+// Outside Lambda (local dev) a random per-process secret is generated instead,
+// so logins work with zero config but die with the process — fine for dev,
+// and any other unconfigured deployment fails safe the same way.
+const DASHBOARD_JWT_SECRET = process.env.DASHBOARD_JWT_SECRET
+    || crypto.randomBytes(32).toString('hex');
 
 function checkDashboardToken(req, res, next) {
     const header = req.headers.authorization || '';
@@ -26,11 +29,15 @@ function checkDashboardToken(req, res, next) {
     }
     try {
         req.dashboardUser = jwt.verify(token, DASHBOARD_JWT_SECRET);
-        req.user = req.dashboardUser; // shared handlers read req.user
-        return next();
     } catch (e) {
         return res.status(401).json({ status: 'error', message: 'Invalid or expired token' });
     }
+    // Password-reset tokens share the secret but are not login sessions.
+    if (req.dashboardUser.purpose) {
+        return res.status(401).json({ status: 'error', message: 'Invalid or expired token' });
+    }
+    req.user = req.dashboardUser; // shared handlers read req.user
+    return next();
 }
 
 // Every clinic identifier in the request must match the token's own clinic.

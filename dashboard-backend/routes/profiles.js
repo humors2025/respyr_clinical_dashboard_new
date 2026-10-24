@@ -41,9 +41,13 @@ router.post('/update', checkDashboardToken, enforceOwnClinic, async (req, res) =
             [age, height, weight, login_id, profile_id]
         );
 
+        // data_personal_info keeps one row PER EDIT, and every reader joins
+        // only the newest row (MAX(id)). Updating every row silently rewrote
+        // that whole history, so touch only the newest row.
         const [result2] = await pool.query(
             `UPDATE data_personal_info SET age = ?, height = ?, weight = ?
-       WHERE login_id = ? AND profile_id = ?`,
+       WHERE login_id = ? AND profile_id = ?
+       ORDER BY id DESC LIMIT 1`,
             [age, height, weight, login_id, profile_id]
         );
 
@@ -61,6 +65,8 @@ router.post('/update', checkDashboardToken, enforceOwnClinic, async (req, res) =
 });
 
 router.post('/delete', checkDashboardToken, enforceOwnClinic, async (req, res) => {
+    let conn;
+    let inTransaction = false;
     try {
         const login_id = req.body?.login_id || '';
         const profile_id = req.body?.profile_id || '';
@@ -70,40 +76,45 @@ router.post('/delete', checkDashboardToken, enforceOwnClinic, async (req, res) =
             return res.json({ status: 'error', message: 'login_id, profile_id, and name are required.' });
         }
 
-        let totalDeleted = 0;
+        // All four tables or none. Running the deletes separately could leave a
+        // half-deleted subject (profile gone, scores still counted) whenever a
+        // later statement failed.
+        conn = await pool.getConnection();
+        await conn.beginTransaction();
+        inTransaction = true;
 
-        const [r1] = await pool.query(
+        const [r1] = await conn.query(
             `DELETE FROM table_clinical_profiles WHERE clinic_name = ? AND subject_id = ?`,
             [login_id, profile_id]
         );
-        totalDeleted += r1.affectedRows;
-
-        const [r2] = await pool.query(
+        const [r2] = await conn.query(
             `DELETE FROM data_personal_info WHERE login_id = ? AND profile_id = ?`,
             [login_id, profile_id]
         );
-        totalDeleted += r2.affectedRows;
-
-        const [r3] = await pool.query(
+        const [r3] = await conn.query(
             `DELETE FROM encryp_clinical_scores_details WHERE login_id = ? AND profile_id = ?`,
             [login_id, profile_id]
         );
-        totalDeleted += r3.affectedRows;
-
-        const [r4] = await pool.query(
+        const [r4] = await conn.query(
             `DELETE FROM clinical_scores_details WHERE login_id = ? AND profile_id = ?`,
             [login_id, profile_id]
         );
-        totalDeleted += r4.affectedRows;
 
+        await conn.commit();
+        inTransaction = false;
+
+        const totalDeleted = r1.affectedRows + r2.affectedRows + r3.affectedRows + r4.affectedRows;
         if (totalDeleted > 0) {
             res.json({ status: 'success', message: `${name} profile has been deleted.` });
         } else {
             res.json({ status: 'error', message: `No matching profile found for ${name}.` });
         }
     } catch (err) {
+        if (inTransaction) await conn.rollback().catch(() => {});
         console.error(err);
         res.json({ status: 'error', message: 'Something went wrong. Please try again.' });
+    } finally {
+        if (conn) conn.release();
     }
 });
 

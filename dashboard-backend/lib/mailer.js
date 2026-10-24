@@ -8,8 +8,8 @@
 //
 // NOTE ON NETWORKING: unlike every other module here, this one talks to the
 // public internet (smtp.zoho.in:465) rather than to MySQL. A Lambda attached to
-// a VPC has no route out unless its subnets go through a NAT gateway — see the
-// networking note in DEPLOY-LAMBDA.md.
+// a VPC has no route out unless its subnets go through a NAT gateway — see
+// DEPLOY-EC2-LAMBDA.md.
 // ---------------------------------------------------------------------------
 const nodemailer = require('nodemailer');
 
@@ -20,10 +20,12 @@ const SMTP_PASS = process.env.RESPYR_SMTP_PASS || '';
 
 // The PHP version carried the password as a source-code fallback. Keeping that
 // habit would put the credential in the deployment zip, so there is no fallback
-// here: on Lambda the env var is required, and locally mail simply reports that
-// it is not configured instead of failing deep inside the SMTP handshake.
+// here. Mail is optional: without the env var the report route answers "Email
+// is not configured" at once, which is the intended state for a Lambda inside a
+// VPC with no NAT gateway (SMTP could not get out anyway). Every other route is
+// unaffected.
 if (process.env.AWS_LAMBDA_FUNCTION_NAME && !SMTP_PASS) {
-    throw new Error('RESPYR_SMTP_PASS must be set in the Lambda environment');
+    console.warn('RESPYR_SMTP_PASS is not set: "Send pdf" is disabled until it is.');
 }
 
 // One transport for the whole container. `pool: true` lets a warm Lambda reuse
@@ -173,7 +175,8 @@ function otpBodyHtml(clinicName, otp) {
 
 // Sends the forgot-password OTP for the dashboard. The code itself is minted by
 // the caller (routes/dashboard.js), which also stores its bcrypt hash — this
-// function only delivers it.
+// function only delivers it. Like "Send pdf", it needs RESPYR_SMTP_PASS set and
+// a route to the internet (NAT gateway) to actually send.
 async function sendOtpEmail({ to, clinicName, otp }) {
     await getTransport().sendMail({
         from: { name: 'Respyr Dashboard', address: SMTP_USER },

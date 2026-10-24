@@ -10,6 +10,20 @@ const pool = require('../db');
 const MAX_ATTEMPTS = 8;        // failures allowed inside the window
 const WINDOW_MINUTES = 15;     // rolling window / lockout length
 
+// The counter is keyed by username + caller IP, not username alone: with a
+// bare username key, anyone could lock a clinic out of its own dashboard with
+// 8 junk guesses every 15 minutes. The IP is the LAST X-Forwarded-For entry —
+// the one the Function URL itself appends, which a caller cannot forge (a
+// forged first entry would let an attacker both dodge the limit and lock out
+// addresses it chooses). Locally there is no proxy, so the socket address is
+// used.
+function keyFor(username, req) {
+    const xff = String(req.headers?.['x-forwarded-for'] || '');
+    const ip = (xff.split(',').pop() || '').trim()
+        || req.socket?.remoteAddress || 'unknown';
+    return `${String(username).trim().toLowerCase()}|${ip}`.slice(0, 255);
+}
+
 pool.query(
     `CREATE TABLE IF NOT EXISTS dashboard_login_attempts (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -62,4 +76,4 @@ async function clearFailures(key) {
     }
 }
 
-module.exports = { isLockedOut, recordFailure, clearFailures, MAX_ATTEMPTS, WINDOW_MINUTES };
+module.exports = { keyFor, isLockedOut, recordFailure, clearFailures, MAX_ATTEMPTS, WINDOW_MINUTES };

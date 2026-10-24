@@ -32,9 +32,23 @@ app.use((req, res, next) => {
 
 app.get('/ping', (req, res) => res.json({ status: 'success', service: 'dashboard-backend' }));
 
+// Full check: MySQL reachable, tables present, clinic data loaded. 200 or 503.
+const { runHealthChecks } = require('./lib/health');
+app.get('/health', async (req, res) => {
+    const report = await runHealthChecks();
+    res.set('Cache-Control', 'no-store');
+    res.status(report.status === 'ok' ? 200 : 503).json(report);
+});
+
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/clinic', require('./routes/clinic'));
 app.use('/api/profiles', require('./routes/profiles'));
+
+// Internal admin pages, protected by ADMIN_KEY: create a clinic login, app
+// logs, raw sensor data.
+app.use('/admin', require('./routes/admin'));
+app.use('/admin', require('./routes/admin-logs'));
+app.use('/admin', require('./routes/admin-sensors'));
 
 // Anything else is not part of this service — the app's endpoints live in the
 // app backend, and saying so plainly beats a generic 404 during the split.

@@ -1,0 +1,60 @@
+/* Sensor-data page. logs.css (loaded first) is the shared admin look; this
+   file only holds what is particular to this page's table and detail view. */
+
+.col-stime { width: 150px; white-space: nowrap; }
+.col-slogin { width: 140px; }
+.col-shwid { width: 130px; }
+.col-num { width: 104px; text-align: right; white-space: nowrap; }
+.log-table th.col-num { text-align: right; }
+
+.num-main {
+  display: block;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.cell-dttm { display: block; font-weight: 500; }
+
+.fvc-pill {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--blue);
+  border: 1px solid var(--blue-light);
+  background: var(--blue-light);
+  border-radius: var(--r-pill);
+  padding: 0 8px;
+}
+
+/* All 41 columns, in a tighter grid than the logs detail. */
+.sensor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px 20px;
+  margin: 0;
+}
+.sensor-grid div { min-width: 0; }
+.sensor-grid dt {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: -0.2px;
+  overflow-wrap: anywhere;
+}
+.sensor-grid dd {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-primary);
+  letter-spacing: -0.24px;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 920px) {
+  .col-temp { display: none; }
+}
+@media (max-width: 760px) {
+  .col-shwid, .col-num:nth-child(5), .col-num:nth-child(6) { display: none; }
+  .col-stime { width: 96px; white-space: normal; }
+}

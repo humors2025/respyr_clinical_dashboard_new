@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Create Clinic Login · Respyr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/create_clinic.css" />
+  <script src="/admin/create_clinic.js" defer></script>
+</head>
+<body data-dashboard-url="__DASHBOARD_URL__">
+  <main class="page">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-logo" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+          </svg>
+        </span>
+        <span class="brand-name">Respyr</span>
+        <span class="role-badge">admin</span>
+      </div>
+      <nav class="admin-nav" aria-label="Admin pages">
+        <a href="/admin/create_clinic" aria-current="page">Create clinic</a>
+        <a href="/admin/logs">App logs</a>
+        <a href="/admin/sensors">Sensor data</a>
+      </nav>
+    </header>
+
+    <!-- Step 1: the form -->
+    <section class="card" id="create-card">
+      <div class="card-head">
+        <h1 class="card-title">Create clinic login</h1>
+        <p class="card-subtitle">Creates the clinic's dashboard and app login.</p>
+      </div>
+
+      <form id="clinic-form" class="card-body" novalidate>
+        <div class="field">
+          <label class="field-label" for="admin_key">Admin key</label>
+          <div class="input-wrap">
+            <input class="field-input" id="admin_key" type="password" autocomplete="off" spellcheck="false" />
+            <button class="eye-toggle" type="button" data-target="admin_key" data-name="admin key" aria-label="Show admin key" aria-pressed="false">
+              <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" /></svg>
+              <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-11-7-11-7a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19" /><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+            </button>
+          </div>
+          <p class="field-hint">The ADMIN_KEY set on the backend. Remembered in this browser tab only.</p>
+          <p class="field-error" data-for="admin_key" hidden></p>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="field">
+          <label class="field-label" for="clinic_name">Clinic login ID</label>
+          <input class="field-input" id="clinic_name" type="text" autocomplete="off" spellcheck="false" maxlength="100" />
+          <p class="field-hint">The clinic signs in to the dashboard with this. It must be unique.</p>
+          <p class="field-error" data-for="clinic_name" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="phone_no">Phone number</label>
+          <input class="field-input" id="phone_no" type="tel" autocomplete="off" inputmode="tel" maxlength="20" />
+          <p class="field-hint">Used to sign in to the mobile app. It must be unique.</p>
+          <p class="field-error" data-for="phone_no" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="email">Email</label>
+          <input class="field-input" id="email" type="email" autocomplete="off" maxlength="255" />
+          <p class="field-error" data-for="email" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="location">Location</label>
+          <input class="field-input" id="location" type="text" autocomplete="off" maxlength="255" />
+          <p class="field-error" data-for="location" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="test_limit">Test limit</label>
+          <select class="field-input" id="test_limit">
+            <option value="">Select…</option>
+            <option value="false">Unlimited tests</option>
+            <option value="true">Limited number of tests</option>
+          </select>
+          <p class="field-error" data-for="test_limit" hidden></p>
+        </div>
+
+        <div class="field" id="test_no_group" hidden>
+          <label class="field-label" for="test_no">Number of tests allowed</label>
+          <input class="field-input" id="test_no" type="number" min="1" step="1" inputmode="numeric" />
+          <p class="field-error" data-for="test_no" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="password">Temporary password</label>
+          <div class="input-wrap">
+            <input class="field-input" id="password" type="password" autocomplete="new-password" spellcheck="false" maxlength="72" />
+            <button class="eye-toggle" type="button" data-target="password" data-name="password" aria-label="Show password" aria-pressed="false">
+              <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" /></svg>
+              <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-11-7-11-7a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19" /><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+            </button>
+          </div>
+          <p class="field-hint">At least 6 characters. Use the eye to check it; it is also shown in the welcome message.</p>
+          <p class="field-error" data-for="password" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="confirm_password">Confirm password</label>
+          <div class="input-wrap">
+            <input class="field-input" id="confirm_password" type="password" autocomplete="new-password" spellcheck="false" maxlength="72" />
+            <button class="eye-toggle" type="button" data-target="confirm_password" data-name="password" aria-label="Show password" aria-pressed="false">
+              <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" /></svg>
+              <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-11-7-11-7a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19" /><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+            </button>
+          </div>
+          <p class="field-error" data-for="confirm_password" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="logo_src">Dashboard logo <span class="optional">optional</span></label>
+          <input class="field-input file-input" id="logo_src" type="file" accept="image/png,image/jpeg" />
+          <p class="field-hint">PNG or JPEG, up to 2 MB.</p>
+          <p class="field-error" data-for="logo_src" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="report_logo_src">Report logo <span class="optional">optional</span></label>
+          <input class="field-input file-input" id="report_logo_src" type="file" accept="image/png,image/jpeg" />
+          <p class="field-hint">PNG or JPEG, up to 2 MB.</p>
+          <p class="field-error" data-for="report_logo_src" hidden></p>
+        </div>
+
+        <div class="form-error" id="form-error" role="alert" hidden></div>
+
+        <button class="btn-primary" type="submit" id="submit-btn">
+          <span class="spinner" aria-hidden="true" hidden></span>
+          <span class="btn-label">Create clinic</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- Step 2: result -->
+    <section class="card" id="success-card" hidden>
+      <div class="card-body success">
+        <div class="icon-wrap" aria-hidden="true">
+          <div class="icon-inner">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.5l4.5 4.5L19 7.5" />
+            </svg>
+          </div>
+        </div>
+        <h2 class="card-title">Clinic created</h2>
+        <span class="tag-pill">Login active</span>
+
+        <div class="info-card" id="summary"></div>
+
+        <div class="field">
+          <span class="field-label">Welcome message</span>
+          <pre class="message-box" id="welcome-message"></pre>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" type="button" id="copy-btn">Copy message</button>
+          <button class="btn-secondary" type="button" id="another-btn">Create another clinic</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

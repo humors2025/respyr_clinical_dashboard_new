@@ -84,6 +84,22 @@ function describe(err) {
     } else if (err && err.code === 'ETIMEDOUT') {
         err.message = `Timed out connecting to MySQL at ${config.host}:${config.port}. `
             + 'This is almost always a VPC/security-group issue rather than a credentials issue.';
+    } else if (err && err.code === 'ECONNREFUSED') {
+        // The host answered but nothing listens on that address: on a fresh EC2
+        // MySQL this is bind-address = 127.0.0.1 in mysqld.cnf.
+        err.message = `MySQL at ${config.host}:${config.port} refused the connection. `
+            + 'On EC2, set bind-address = 0.0.0.0 in mysqld.cnf and restart MySQL.';
+    } else if (err && err.code === 'HANDSHAKE_NO_SSL_SUPPORT') {
+        err.message = `MySQL at ${config.host} has TLS turned off. `
+            + 'Enable TLS on the server, or set DB_SSL=off (only inside a private VPC).';
+    } else if (err && /SELF_SIGNED|UNABLE_TO_VERIFY|ALTNAME/.test(String(err.code))) {
+        err.message = `MySQL at ${config.host} presented a certificate DB_SSL=${sslMode} cannot verify. `
+            + 'For MySQL on EC2 (self-signed certificate) set DB_SSL=no-verify.';
+    } else if (err && (err.code === 'ER_ACCESS_DENIED_ERROR' || err.code === 'ER_HOST_NOT_PRIVILEGED')) {
+        err.message = `MySQL rejected user '${config.user}'. Check DB_USER / DB_PASSWORD, and that `
+            + `the user was created for host '%' (not 'localhost').`;
+    } else if (err && err.code === 'ER_BAD_DB_ERROR') {
+        err.message = `Database '${config.database}' does not exist on ${config.host}. Check DB_NAME.`;
     }
     return err;
 }

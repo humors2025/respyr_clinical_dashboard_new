@@ -39,6 +39,11 @@ router.use((req, res, next) => {
     } catch (e) {
         return res.status(401).json({ status: 'error', message: 'Invalid or expired token' });
     }
+    // A password-reset token is signed with the same secret, but it is only good
+    // for /forgot-password/reset — it must never work as a login session.
+    if (req.dashboardUser.purpose) {
+        return res.status(401).json({ status: 'error', message: 'Invalid or expired token' });
+    }
 
     // EVERY clinic identifier in the request must match the token. Checking only
     // the first one found let a caller pass its own login_id while a handler
@@ -88,13 +93,22 @@ router.post('/age-gender-diversity', async (req, res) => {
 
         // That day's score rows for this clinic, joined to demographics. Reads the
         // plaintext table, so the score fields come back ready to use (no decrypt).
+        // data_personal_info holds one row PER EDIT, so join only each subject's
+        // newest row — joining it directly multiplied count_taken by the number
+        // of edits and could show stale age/height/weight.
         const [rows] = await pool.query(
             `SELECT s.*, d.name, d.gender, d.age, d.height, d.weight
              FROM clinical_scores_details s
-             LEFT JOIN data_personal_info d
-               ON d.login_id = s.login_id AND d.profile_id = s.profile_id
+             LEFT JOIN (
+                 SELECT p.login_id, p.profile_id, p.name, p.gender, p.age, p.height, p.weight
+                 FROM data_personal_info p
+                 INNER JOIN (
+                     SELECT login_id, profile_id, MAX(id) AS mid
+                     FROM data_personal_info WHERE login_id = ? GROUP BY login_id, profile_id
+                 ) pm ON pm.mid = p.id
+             ) d ON d.login_id = s.login_id AND d.profile_id = s.profile_id
              WHERE s.login_id = ? AND s.dttm LIKE ?`,
-            [login_id, dateLike]
+            [login_id, login_id, dateLike]
         );
 
         // Keep the latest row per (login_id||profile_id) and count the day's readings.
@@ -384,12 +398,18 @@ router.get('/test-dates', testDatesHandler);
 router.post('/test-dates', testDatesHandler);
 
 // ---------------------------------------------------------------------------
-// Forgot-password flow — SERVER-side OTP.
-// The legacy PHP returned the OTP to the browser and the page compared it in
-// JavaScript (visible in DevTools; and the old update_password.php would reset
-// any account with no OTP at all). Here the OTP never leaves the server:
-// hashed at rest, 5-minute expiry, 5 attempts, and the reset itself requires a
-// short-lived signed token that only a correct OTP can mint.
+// Forgot-password flow — SERVER-side OTP, rebuilt on lib/mailer.js + this
+// database (no humorstech.com dependency). The legacy PHP returned the OTP to
+// the browser and the page compared it in JavaScript (visible in DevTools; and
+// the old update_password.php would reset any account with no OTP at all).
+// Here the OTP never leaves the server: hashed at rest, 5-minute expiry, 5
+// attempts, and the reset itself requires a short-lived signed token that only
+// a correct OTP can mint.
+//
+// Until RESPYR_SMTP_PASS is set AND the Lambda can reach smtp.zoho.in (NAT
+// gateway — see "turning Send pdf on" in DEPLOY-EC2-LAMBDA.md), /send answers
+// with the same "contact support" message the old stub gave. Verify/reset need
+// no internet and work as soon as an OTP can go out.
 // ---------------------------------------------------------------------------
 pool.query(
     `CREATE TABLE IF NOT EXISTS dashboard_password_resets (
@@ -410,13 +430,19 @@ function maskEmail(e) {
 }
 
 // Step 1: generate + email the OTP. The code is minted HERE and mailed through
-// our own SMTP (lib/mailer.js) — this used to go through the legacy PHP mailer
-// on humorstech.com, the last call this service made to the old server. The
-// browser only ever learns a masked email address.
+// our own SMTP (lib/mailer.js). The browser only ever learns a masked email.
 router.post('/forgot-password/send', async (req, res) => {
     try {
         const username = (req.body?.username || '').trim();
         if (!username) return res.status(400).json({ success: false, message: 'Username required' });
+
+        if (!mailConfigured()) {
+            console.error('forgot-password/send: RESPYR_SMTP_PASS is not set');
+            return res.status(503).json({
+                success: false,
+                message: 'Password reset is not available yet. Please contact Respyr support to reset your password.',
+            });
+        }
 
         // table_clinics has no dedicated email column: `username` holds the
         // clinic's email where one is on file (older rows carry a legacy
@@ -429,11 +455,6 @@ router.post('/forgot-password/send', async (req, res) => {
         const email = String(clinics[0]?.username || '').trim();
         if (!clinics.length || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             return res.json({ success: false, message: 'Could not send OTP. Try again.' });
-        }
-
-        if (!mailConfigured()) {
-            console.error('forgot-password/send: RESPYR_SMTP_PASS is not set');
-            return res.status(503).json({ success: false, message: 'Email is not configured on the server.' });
         }
 
         const otp = String(crypto.randomInt(100000, 1000000));
@@ -547,7 +568,10 @@ router.post('/login', async (req, res) => {
         const GENERIC = 'Invalid username or password';
 
         // Brute force protection: unlimited guesses used to be possible.
-        if (await throttle.isLockedOut(username)) {
+        // Keyed by username + caller IP (see lib/throttle.js), so a stranger's
+        // failed guesses cannot lock the clinic itself out.
+        const throttleKey = throttle.keyFor(username, req);
+        if (await throttle.isLockedOut(throttleKey)) {
             return res.status(429).json({
                 error: `Too many failed attempts. Try again in ${throttle.WINDOW_MINUTES} minutes.`,
             });
@@ -565,11 +589,11 @@ router.post('/login', async (req, res) => {
             } catch (e) { /* non-bcrypt row — skip */ }
         }
         if (!match) {
-            await throttle.recordFailure(username);
+            await throttle.recordFailure(throttleKey);
             return res.status(401).json({ error: GENERIC });
         }
 
-        await throttle.clearFailures(username);
+        await throttle.clearFailures(throttleKey);
         const token = jwt.sign(
             { login_id: match.clinic_name, username: match.clinic_name },
             DASHBOARD_JWT_SECRET,
@@ -787,12 +811,6 @@ router.post('/send-report-email', (req, res) => {
                     ? 'Missing PDF or email - the report exceeded the upload limit.'
                     : 'The attachment must be a PDF.',
             });
-        }
-
-        // A password-reset token is a valid dashboard JWT but must not be able
-        // to send mail; the router's own check only establishes the signature.
-        if (req.dashboardUser?.purpose === 'pwreset') {
-            return res.status(403).json({ success: false, message: 'Not authorised to send reports.' });
         }
 
         const email = String(req.body?.email || '').trim();
