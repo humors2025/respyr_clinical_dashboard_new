@@ -86,10 +86,11 @@
         .backlink:hover { text-decoration: underline; }
 
         /* OTP step */
-        .otp-inputs { display: flex; gap: 12px; justify-content: center; margin: 4px 0 16px; }
+        /* 6 boxes (backend sends a 6-digit code), sized to fit a phone card */
+        .otp-inputs { display: flex; gap: 8px; justify-content: center; margin: 4px 0 16px; }
         .otp-inputs .input {
-            width: 58px; height: 58px; text-align: center;
-            font-family: "Poppins", sans-serif; font-size: 22px; font-weight: 600; color: var(--tx1);
+            width: 46px; height: 54px; min-width: 0; flex: 0 1 46px; text-align: center;
+            font-family: "Poppins", sans-serif; font-size: 20px; font-weight: 600; color: var(--tx1);
             border: 1px solid var(--line); border-radius: 10px; outline: none;
             transition: border-color 0.15s, box-shadow 0.15s;
         }
@@ -154,11 +155,13 @@
                 <!-- Step 2: verify OTP -->
                 <form action="" id="otp-form" class="otp-form">
                     <h1>Enter the code</h1>
-                    <p class="sub">We've sent a 4-digit code to your registered email.</p>
+                    <p class="sub">We've sent a 6-digit code to your registered email.</p>
 
                     <div class="alert-ok" id="otp_sent"></div>
 
                     <div id="inputs" class="otp-inputs">
+                        <input class="input" type="text" inputmode="numeric" maxlength="1" />
+                        <input class="input" type="text" inputmode="numeric" maxlength="1" />
                         <input class="input" type="text" inputmode="numeric" maxlength="1" />
                         <input class="input" type="text" inputmode="numeric" maxlength="1" />
                         <input class="input" type="text" inputmode="numeric" maxlength="1" />
