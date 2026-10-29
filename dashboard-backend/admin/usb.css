@@ -1,0 +1,38 @@
+/* USB access page — additions on top of logs.css (the shared admin look). */
+
+.add-card { margin-bottom: 16px; }
+
+.add-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.add-row .field-input { flex: 1 1 auto; min-width: 0; }
+.add-row .btn-primary { flex: 0 0 auto; white-space: nowrap; }
+
+.field-ok {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: #1a7f4e;
+}
+
+.col-action { width: 1%; }
+
+.remove-btn {
+  border: 1px solid #f1c6c6;
+  background: #fff;
+  color: #c0392b;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.remove-btn:hover { background: #fdf0ef; }
+.remove-btn:disabled { opacity: 0.55; cursor: default; }
+
+@media (max-width: 480px) {
+  .add-row { flex-direction: column; }
+}

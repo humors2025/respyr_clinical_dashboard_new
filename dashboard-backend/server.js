@@ -49,6 +49,7 @@ app.use('/api/profiles', require('./routes/profiles'));
 app.use('/admin', require('./routes/admin'));
 app.use('/admin', require('./routes/admin-logs'));
 app.use('/admin', require('./routes/admin-sensors'));
+app.use('/admin', require('./routes/admin-usb'));
 
 // Anything else is not part of this service — the app's endpoints live in the
 // app backend, and saying so plainly beats a generic 404 during the split.
